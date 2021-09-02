@@ -1,0 +1,8 @@
+{
+  "cSpell.words": [
+    "roboto",
+    "vite",
+    "vitejs"
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib"
+}
