@@ -1,7 +1,7 @@
 import React from 'react'
 import { Box, Theme } from '@mui/material'
 import { makeStyles } from '@mui/styles'
-import { ModelEditor } from '@'
+import { ModelEditor } from '@/index'
 
 import './App.css'
 import '@/index.css'

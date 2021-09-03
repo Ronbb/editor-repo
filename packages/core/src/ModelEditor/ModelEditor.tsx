@@ -1,6 +1,8 @@
-import React, { FC, useMemo, useState } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 import { createEditor, BaseEditor, Descendant } from 'slate'
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react'
+import { useImmutableCallback } from '@/utils/hooks/useImmutableCallback'
+import { noop } from '@/utils/noop'
 
 type CustomElement = { type: 'paragraph'; children: CustomText[] }
 type CustomText = { text: string; bold?: true }
@@ -18,24 +20,40 @@ export interface ModelEditorProps {
   classes?: {
     content?: string
   }
+  value?: Descendant[]
+  onChange?: (value: Descendant[]) => void
 }
 
-export const ModelEditor: FC<ModelEditorProps> = ({ id, classes: classNames }) => {
-  const editor = useMemo(() => withReact(createEditor()), [])
-  const [value, setValue] = useState<Descendant[]>([
-    {
-      type: 'paragraph',
-      children: [{ text: '' }],
-    },
-  ])
+const initValue: Descendant[] = [
+  {
+    type: 'paragraph',
+    children: [{ text: '' }],
+  },
+]
+
+export const ModelEditor: FC<ModelEditorProps> = ({
+  id,
+  classes,
+  value,
+  onChange = noop,
+}) => {
+  const [editor] = useState(() => withReact(createEditor()))
+  const [innerValue, setInnerValue] = useState<Descendant[]>(initValue)
+  const immutableOnChange = useImmutableCallback(onChange)
+
+  useEffect(() => {
+    immutableOnChange(innerValue)
+  }, [innerValue])
+
+  useEffect(() => {
+    if (value) {
+      setInnerValue((inner) => (inner === value ? inner : value))
+    }
+  }, [value])
 
   return (
-    <Slate
-      editor={editor}
-      value={value}
-      onChange={(newValue) => setValue(newValue)}
-    >
-      <Editable id={id} className={classNames?.content} />
+    <Slate editor={editor} value={innerValue} onChange={setInnerValue}>
+      <Editable id={id} className={classes?.content} />
     </Slate>
   )
 }

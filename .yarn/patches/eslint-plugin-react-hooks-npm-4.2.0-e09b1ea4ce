@@ -1,0 +1,560 @@
+diff --git a/cjs/eslint-plugin-react-hooks.development.js b/cjs/eslint-plugin-react-hooks.development.js
+index 29fb123675ac76548512f3ed4caa099a5935f438..3891f17e0d015f023b3c021f0709238aff706a0d 100644
+--- a/cjs/eslint-plugin-react-hooks.development.js
++++ b/cjs/eslint-plugin-react-hooks.development.js
+@@ -1,4 +1,4 @@
+-/** @license React v4.2.0
++/** @license React vundefined
+  * eslint-plugin-react-hooks.development.js
+  *
+  * Copyright (c) Facebook, Inc. and its affiliates.
+@@ -594,7 +594,7 @@ var RulesOfHooks = {
+                   });
+                 } else if (codePathFunctionName) {
+                   // Custom message if we found an invalid function name.
+-                  var _message2 = "React Hook \"" + context.getSource(hook) + "\" is called in " + ("function \"" + context.getSource(codePathFunctionName) + "\" ") + 'that is neither a React function component nor a custom ' + 'React Hook function.' + ' React component names must start with an uppercase letter.';
++                  var _message2 = "React Hook \"" + context.getSource(hook) + "\" is called in " + ("function \"" + context.getSource(codePathFunctionName) + "\" ") + 'that is neither a React function component nor a custom ' + 'React Hook function.' + ' React component names must start with an uppercase letter.' + ' React Hook names must start with the word "use".';
+ 
+                   context.report({
+                     node: hook,
+@@ -735,6 +735,12 @@ var ExhaustiveDeps = {
+         },
+         enableDangerousAutofixThisMayCauseInfiniteLoops: {
+           type: 'boolean'
++        },
++        stableHooks: {
++          type: 'array',
++          items: {
++            type: 'array'
++          }
+         }
+       }
+     }]
+@@ -742,10 +748,13 @@ var ExhaustiveDeps = {
+   create: function (context) {
+     // Parse the `additionalHooks` regex.
+     var additionalHooks = context.options && context.options[0] && context.options[0].additionalHooks ? new RegExp(context.options[0].additionalHooks) : undefined;
+-    var enableDangerousAutofixThisMayCauseInfiniteLoops = context.options && context.options[0] && context.options[0].enableDangerousAutofixThisMayCauseInfiniteLoops || false;
++    var enableDangerousAutofixThisMayCauseInfiniteLoops = context.options && context.options[0] && context.options[0].enableDangerousAutofixThisMayCauseInfiniteLoops || false; // Parse the `stableHooks` regex.
++
++    var stableHooks = context.options && context.options[0] && context.options[0].stableHooks ? context.options[0].stableHooks : [];
+     var options = {
+       additionalHooks: additionalHooks,
+-      enableDangerousAutofixThisMayCauseInfiniteLoops: enableDangerousAutofixThisMayCauseInfiniteLoops
++      enableDangerousAutofixThisMayCauseInfiniteLoops: enableDangerousAutofixThisMayCauseInfiniteLoops,
++      stableHooks: stableHooks
+     };
+ 
+     function reportProblem(problem) {
+@@ -826,7 +835,8 @@ var ExhaustiveDeps = {
+         }
+ 
+         componentScope = currentScope;
+-      } // Next we'll define a few helpers that helps us
++      }
++      var isArray = Array.isArray; // Next we'll define a few helpers that helps us
+       // tell if some values don't have to be declared as deps.
+       // Some are known to be stable based on Hook calls.
+       // const [state, setState] = useState() / React.useState()
+@@ -838,7 +848,7 @@ var ExhaustiveDeps = {
+       // False for everything else.
+ 
+       function isStableKnownHookValue(resolved) {
+-        if (!Array.isArray(resolved.defs)) {
++        if (!isArray(resolved.defs)) {
+           return false;
+         }
+ 
+@@ -909,7 +919,7 @@ var ExhaustiveDeps = {
+           return true;
+         } else if (name === 'useState' || name === 'useReducer') {
+           // Only consider second value in initializing tuple stable.
+-          if (id.type === 'ArrayPattern' && id.elements.length === 2 && Array.isArray(resolved.identifiers)) {
++          if (id.type === 'ArrayPattern' && id.elements.length === 2 && isArray(resolved.identifiers)) {
+             // Is second tuple value the same reference we're checking?
+             if (id.elements[1] === resolved.identifiers[0]) {
+               if (name === 'useState') {
+@@ -936,13 +946,62 @@ var ExhaustiveDeps = {
+             }
+           }
+         } else if (name === 'useTransition') {
+-          if (id.type === 'ArrayPattern' && Array.isArray(resolved.identifiers)) {
+-            // Is first tuple value the same reference we're checking?
+-            if (id.elements[0] === resolved.identifiers[0]) {
++          // Only consider second value in initializing tuple stable.
++          if (id.type === 'ArrayPattern' && id.elements.length === 2 && Array.isArray(resolved.identifiers)) {
++            // Is second tuple value the same reference we're checking?
++            if (id.elements[1] === resolved.identifiers[0]) {
+               // Setter is stable.
+               return true;
+             }
+           }
++        } else {
++          var stableHook = stableHooks.find(function (_ref) {
++            var hook = _ref[0];
++            return hook === name;
++          });
++
++          if (stableHook) {
++            var stableKeys = stableHook.slice(1);
++
++            if (stableKeys.length === 0 && id.type === 'Identifier') {
++              return true;
++            }
++
++            if (id.type === 'ArrayPattern' && id.elements.length > 0 && isArray(resolved.identifiers)) {
++              var _iterator = _createForOfIteratorHelper(stableKeys),
++                  _step;
++
++              try {
++                for (_iterator.s(); !(_step = _iterator.n()).done;) {
++                  var key = _step.value;
++
++                  if (id.elements[key] === resolved.identifiers[0]) {
++                    return true;
++                  }
++                }
++              } catch (err) {
++                _iterator.e(err);
++              } finally {
++                _iterator.f();
++              }
++            }
++
++            if (id.type === 'ObjectPattern' && id.properties.length > 0 && isArray(resolved.identifiers)) {
++              var found = stableKeys.some(function (key) {
++                var property = id.properties.find(function (p) {
++                  return p.key.name === key || p.key.value === key;
++                });
++
++                if (property && property.value === resolved.identifiers[0]) {
++                  return true;
++                }
++              });
++
++              if (found) {
++                return true;
++              }
++            }
++          }
+         } // By default assume it's dynamic.
+ 
+ 
+@@ -951,7 +1010,7 @@ var ExhaustiveDeps = {
+ 
+ 
+       function isFunctionWithoutCapturedValues(resolved) {
+-        if (!Array.isArray(resolved.defs)) {
++        if (!isArray(resolved.defs)) {
+           return false;
+         }
+ 
+@@ -1041,12 +1100,12 @@ var ExhaustiveDeps = {
+       gatherDependenciesRecursively(scope);
+ 
+       function gatherDependenciesRecursively(currentScope) {
+-        var _iterator = _createForOfIteratorHelper(currentScope.references),
+-            _step;
++        var _iterator2 = _createForOfIteratorHelper(currentScope.references),
++            _step2;
+ 
+         try {
+-          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+-            var reference = _step.value;
++          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
++            var reference = _step2.value;
+ 
+             // If this reference is not resolved or it is not declared in a pure
+             // scope then we don't care about this reference.
+@@ -1108,30 +1167,30 @@ var ExhaustiveDeps = {
+             }
+           }
+         } catch (err) {
+-          _iterator.e(err);
++          _iterator2.e(err);
+         } finally {
+-          _iterator.f();
++          _iterator2.f();
+         }
+ 
+-        var _iterator2 = _createForOfIteratorHelper(currentScope.childScopes),
+-            _step2;
++        var _iterator3 = _createForOfIteratorHelper(currentScope.childScopes),
++            _step3;
+ 
+         try {
+-          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+-            var childScope = _step2.value;
++          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
++            var childScope = _step3.value;
+             gatherDependenciesRecursively(childScope);
+           }
+         } catch (err) {
+-          _iterator2.e(err);
++          _iterator3.e(err);
+         } finally {
+-          _iterator2.f();
++          _iterator3.f();
+         }
+       } // Warn about accessing .current in cleanup effects.
+ 
+ 
+-      currentRefsInEffectCleanup.forEach(function (_ref, dependency) {
+-        var reference = _ref.reference,
+-            dependencyNode = _ref.dependencyNode;
++      currentRefsInEffectCleanup.forEach(function (_ref2, dependency) {
++        var reference = _ref2.reference,
++            dependencyNode = _ref2.dependencyNode;
+         var references = reference.resolved.references; // Is React managing this ref or us?
+         // Let's see if we can find a .current assignment.
+ 
+@@ -1178,9 +1237,9 @@ var ExhaustiveDeps = {
+ 
+ 
+       var stableDependencies = new Set();
+-      dependencies.forEach(function (_ref2, key) {
+-        var isStable = _ref2.isStable,
+-            references = _ref2.references;
++      dependencies.forEach(function (_ref3, key) {
++        var isStable = _ref3.isStable,
++            references = _ref3.references;
+ 
+         if (isStable) {
+           stableDependencies.add(key);
+@@ -1202,9 +1261,9 @@ var ExhaustiveDeps = {
+         // Check if there are any top-level setState() calls.
+         // Those tend to lead to infinite loops.
+         var setStateInsideEffectWithoutDeps = null;
+-        dependencies.forEach(function (_ref3, key) {
+-          var isStable = _ref3.isStable,
+-              references = _ref3.references;
++        dependencies.forEach(function (_ref4, key) {
++          var isStable = _ref4.isStable,
++              references = _ref4.references;
+ 
+           if (setStateInsideEffectWithoutDeps) {
+             return;
+@@ -1367,10 +1426,10 @@ var ExhaustiveDeps = {
+           componentScope: componentScope,
+           scope: scope
+         });
+-        constructions.forEach(function (_ref4) {
+-          var construction = _ref4.construction,
+-              isUsedOutsideOfHook = _ref4.isUsedOutsideOfHook,
+-              depType = _ref4.depType;
++        constructions.forEach(function (_ref5) {
++          var construction = _ref5.construction,
++              isUsedOutsideOfHook = _ref5.isUsedOutsideOfHook,
++              depType = _ref5.depType;
+           var wrapperHook = depType === 'function' ? 'useCallback' : 'useMemo';
+           var constructionType = depType === 'function' ? 'definition' : 'initialization';
+           var defaultAdvice = "wrap the " + constructionType + " of '" + construction.name.name + "' in its own " + wrapperHook + "() Hook.";
+@@ -1380,16 +1439,16 @@ var ExhaustiveDeps = {
+           var suggest; // Only handle the simple case of variable assignments.
+           // Wrapping function declarations can mess up hoisting.
+ 
+-          if (isUsedOutsideOfHook && construction.type === 'Variable' && // Objects may be mutated ater construction, which would make this
++          if (isUsedOutsideOfHook && construction.type === 'Variable' && // Objects may be mutated after construction, which would make this
+           // fix unsafe. Functions _probably_ won't be mutated, so we'll
+           // allow this fix for them.
+           depType === 'function') {
+             suggest = [{
+               desc: "Wrap the " + constructionType + " of '" + construction.name.name + "' in its own " + wrapperHook + "() Hook.",
+               fix: function (fixer) {
+-                var _ref5 = wrapperHook === 'useMemo' ? ["useMemo(() => { return ", '; })'] : ['useCallback(', ')'],
+-                    before = _ref5[0],
+-                    after = _ref5[1];
++                var _ref6 = wrapperHook === 'useMemo' ? ["useMemo(() => { return ", '; })'] : ['useCallback(', ')'],
++                    before = _ref6[0],
++                    after = _ref6[1];
+ 
+                 return [// TODO: also add an import?
+                 fixer.insertTextBefore(construction.node.init, before), // TODO: ideally we'd gather deps here but it would require
+@@ -1714,10 +1773,21 @@ var ExhaustiveDeps = {
+       var reactiveHook = node.callee;
+       var reactiveHookName = getNodeWithoutReactNamespace(reactiveHook).name;
+       var declaredDependenciesNode = node.arguments[callbackIndex + 1];
+-      var isEffect = /Effect($|[^a-z])/g.test(reactiveHookName); // Check the declared dependencies for this reactive hook. If there is no
++      var isEffect = /Effect($|[^a-z])/g.test(reactiveHookName); // Check whether a callback is supplied. If there is no callback supplied
++      // then the hook will not work and React will throw a TypeError.
++      // So no need to check for dependency inclusion.
++
++      if (!callback) {
++        reportProblem({
++          node: reactiveHook,
++          message: "React Hook " + reactiveHookName + " requires an effect callback. " + "Did you forget to pass a callback to the hook?"
++        });
++        return;
++      } // Check the declared dependencies for this reactive hook. If there is no
+       // second argument then the reactive callback will re-run on every render.
+       // So no need to check for dependency inclusion.
+ 
++
+       if (!declaredDependenciesNode && !isEffect) {
+         // These are only used for optimization.
+         if (reactiveHookName === 'useMemo' || reactiveHookName === 'useCallback') {
+@@ -1837,12 +1907,12 @@ var ExhaustiveDeps = {
+   }
+ }; // The meat of the logic.
+ 
+-function collectRecommendations(_ref6) {
+-  var dependencies = _ref6.dependencies,
+-      declaredDependencies = _ref6.declaredDependencies,
+-      stableDependencies = _ref6.stableDependencies,
+-      externalDependencies = _ref6.externalDependencies,
+-      isEffect = _ref6.isEffect;
++function collectRecommendations(_ref7) {
++  var dependencies = _ref7.dependencies,
++      declaredDependencies = _ref7.declaredDependencies,
++      stableDependencies = _ref7.stableDependencies,
++      externalDependencies = _ref7.externalDependencies,
++      isEffect = _ref7.isEffect;
+   // Our primary data structure.
+   // It is a logical representation of property chains:
+   // `props` -> `props.foo` -> `props.foo.bar` -> `props.foo.bar.baz`
+@@ -1878,8 +1948,8 @@ function collectRecommendations(_ref6) {
+   }); // Mark all satisfied nodes.
+   // Imagine checkmarks next to each declared dependency.
+ 
+-  declaredDependencies.forEach(function (_ref7) {
+-    var key = _ref7.key;
++  declaredDependencies.forEach(function (_ref8) {
++    var key = _ref8.key;
+     var node = getOrCreateNodeByPath(depTree, key);
+     node.isSatisfiedRecursively = true;
+   });
+@@ -1892,12 +1962,12 @@ function collectRecommendations(_ref6) {
+     var keys = path.split('.');
+     var node = rootNode;
+ 
+-    var _iterator3 = _createForOfIteratorHelper(keys),
+-        _step3;
++    var _iterator4 = _createForOfIteratorHelper(keys),
++        _step4;
+ 
+     try {
+-      for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+-        var key = _step3.value;
++      for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
++        var key = _step4.value;
+         var child = node.children.get(key);
+ 
+         if (!child) {
+@@ -1908,9 +1978,9 @@ function collectRecommendations(_ref6) {
+         node = child;
+       }
+     } catch (err) {
+-      _iterator3.e(err);
++      _iterator4.e(err);
+     } finally {
+-      _iterator3.f();
++      _iterator4.f();
+     }
+ 
+     return node;
+@@ -1920,12 +1990,12 @@ function collectRecommendations(_ref6) {
+     var keys = path.split('.');
+     var node = rootNode;
+ 
+-    var _iterator4 = _createForOfIteratorHelper(keys),
+-        _step4;
++    var _iterator5 = _createForOfIteratorHelper(keys),
++        _step5;
+ 
+     try {
+-      for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+-        var key = _step4.value;
++      for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
++        var key = _step5.value;
+         var child = node.children.get(key);
+ 
+         if (!child) {
+@@ -1936,9 +2006,9 @@ function collectRecommendations(_ref6) {
+         node = child;
+       }
+     } catch (err) {
+-      _iterator4.e(err);
++      _iterator5.e(err);
+     } finally {
+-      _iterator4.f();
++      _iterator5.f();
+     }
+   } // Now we can learn which dependencies are missing or necessary.
+ 
+@@ -1983,8 +2053,8 @@ function collectRecommendations(_ref6) {
+   var suggestedDependencies = [];
+   var unnecessaryDependencies = new Set();
+   var duplicateDependencies = new Set();
+-  declaredDependencies.forEach(function (_ref8) {
+-    var key = _ref8.key;
++  declaredDependencies.forEach(function (_ref9) {
++    var key = _ref9.key;
+ 
+     // Does this declared dep satisfy a real need?
+     if (satisfyingDependencies.has(key)) {
+@@ -2088,13 +2158,13 @@ function getConstructionExpressionType(node) {
+ // that would invalidate on every render.
+ 
+ 
+-function scanForConstructions(_ref9) {
+-  var declaredDependencies = _ref9.declaredDependencies,
+-      declaredDependenciesNode = _ref9.declaredDependenciesNode,
+-      componentScope = _ref9.componentScope,
+-      scope = _ref9.scope;
+-  var constructions = declaredDependencies.map(function (_ref10) {
+-    var key = _ref10.key;
++function scanForConstructions(_ref10) {
++  var declaredDependencies = _ref10.declaredDependencies,
++      declaredDependenciesNode = _ref10.declaredDependenciesNode,
++      componentScope = _ref10.componentScope,
++      scope = _ref10.scope;
++  var constructions = declaredDependencies.map(function (_ref11) {
++    var key = _ref11.key;
+     var ref = componentScope.variables.find(function (v) {
+       return v.name === key;
+     });
+@@ -2171,9 +2241,9 @@ function scanForConstructions(_ref9) {
+     return false;
+   }
+ 
+-  return constructions.map(function (_ref11) {
+-    var ref = _ref11[0],
+-        depType = _ref11[1];
++  return constructions.map(function (_ref12) {
++    var ref = _ref12[0],
++        depType = _ref12[1];
+     return {
+       construction: ref.defs[0],
+       depType: depType,
+@@ -2261,6 +2331,10 @@ function analyzePropertyChain(node, optionalChains) {
+   } else if (node.type === 'ChainExpression' && !node.computed) {
+     var expression = node.expression;
+ 
++    if (expression.type === 'CallExpression') {
++      throw new Error("Unsupported node type: " + expression.type);
++    }
++
+     var _object2 = analyzePropertyChain(expression.object, optionalChains);
+ 
+     var _property2 = analyzePropertyChain(expression.property, null);
+diff --git a/cjs/eslint-plugin-react-hooks.production.min.js b/cjs/eslint-plugin-react-hooks.production.min.js
+index cbbd1a16e7b6bd681b4529d1dd3bfb333bc212fb..a453dd3c4f277d57f210e9e208dddebced453f09 100644
+--- a/cjs/eslint-plugin-react-hooks.production.min.js
++++ b/cjs/eslint-plugin-react-hooks.production.min.js
+@@ -1,4 +1,4 @@
+-/** @license React v4.2.0
++/** @license React vundefined
+  * eslint-plugin-react-hooks.production.min.js
+  *
+  * Copyright (c) Facebook, Inc. and its affiliates.
+@@ -6,56 +6,58 @@
+  * This source code is licensed under the MIT license found in the
+  * LICENSE file in the root directory of this source tree.
+  */
+-'use strict';function ca(a,c){if(a){if("string"===typeof a)return da(a,c);var b=Object.prototype.toString.call(a).slice(8,-1);"Object"===b&&a.constructor&&(b=a.constructor.name);if("Map"===b||"Set"===b)return Array.from(a);if("Arguments"===b||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(b))return da(a,c)}}function da(a,c){if(null==c||c>a.length)c=a.length;for(var b=0,d=Array(c);b<c;b++)d[b]=a[b];return d}
+-function C(a,c){var b;if("undefined"===typeof Symbol||null==a[Symbol.iterator]){if(Array.isArray(a)||(b=ca(a))||c&&a&&"number"===typeof a.length){b&&(a=b);var d=0;c=function(){};return{s:c,n:function(){return d>=a.length?{done:!0}:{done:!1,value:a[d++]}},e:function(a){throw a;},f:c}}throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");}var e=!0,n=!1,h;return{s:function(){b=a[Symbol.iterator]()},
+-n:function(){var a=b.next();e=a.done;return a},e:function(a){n=!0;h=a},f:function(){try{e||null==b.return||b.return()}finally{if(n)throw h;}}}}function H(a){if("Identifier"===a.type)return/^use[A-Z0-9].*$/.test(a.name);if("MemberExpression"===a.type&&!a.computed&&H(a.property)){a=a.object;var c=/^[A-Z].*/;return"Identifier"===a.type&&c.test(a.name)}return!1}function ea(a){return"Identifier"===a.type?!/^[a-z]/.test(a.name):!1}
+-function fa(a,c){return a.name===c||"MemberExpression"===a.type&&"React"===a.object.name&&a.property.name===c}function ha(a){return!!(a.parent&&a.parent.callee&&fa(a.parent.callee,"forwardRef"))}function ia(a){return!!(a.parent&&a.parent.callee&&fa(a.parent.callee,"memo"))}function ma(a){for(;a;){var c=na(a);if(c&&(ea(c)||H(c))||ha(a)||ia(a))return!0;a=a.parent}return!1}
+-function na(a){if("FunctionDeclaration"===a.type||"FunctionExpression"===a.type&&a.id)return a.id;if("FunctionExpression"===a.type||"ArrowFunctionExpression"===a.type)return"VariableDeclarator"===a.parent.type&&a.parent.init===a?a.parent.id:"AssignmentExpression"===a.parent.type&&a.parent.right===a&&"="===a.parent.operator?a.parent.left:"Property"!==a.parent.type||a.parent.value!==a||a.parent.computed?"AssignmentPattern"!==a.parent.type||a.parent.right!==a||a.parent.computed?void 0:a.parent.left:
++'use strict';function aa(a,c){if(a){if("string"===typeof a)return ba(a,c);var b=Object.prototype.toString.call(a).slice(8,-1);"Object"===b&&a.constructor&&(b=a.constructor.name);if("Map"===b||"Set"===b)return Array.from(a);if("Arguments"===b||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(b))return ba(a,c)}}function ba(a,c){if(null==c||c>a.length)c=a.length;for(var b=0,d=Array(c);b<c;b++)d[b]=a[b];return d}
++function w(a,c){var b;if("undefined"===typeof Symbol||null==a[Symbol.iterator]){if(Array.isArray(a)||(b=aa(a))||c&&a&&"number"===typeof a.length){b&&(a=b);var d=0;c=function(){};return{s:c,n:function(){return d>=a.length?{done:!0}:{done:!1,value:a[d++]}},e:function(a){throw a;},f:c}}throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");}var e=!0,y=!1,g;return{s:function(){b=a[Symbol.iterator]()},
++n:function(){var a=b.next();e=a.done;return a},e:function(a){y=!0;g=a},f:function(){try{e||null==b.return||b.return()}finally{if(y)throw g;}}}}function F(a){if("Identifier"===a.type)return/^use[A-Z0-9].*$/.test(a.name);if("MemberExpression"===a.type&&!a.computed&&F(a.property)){a=a.object;var c=/^[A-Z].*/;return"Identifier"===a.type&&c.test(a.name)}return!1}function ea(a){return"Identifier"===a.type?!/^[a-z]/.test(a.name):!1}
++function fa(a,c){return a.name===c||"MemberExpression"===a.type&&"React"===a.object.name&&a.property.name===c}function ha(a){return!!(a.parent&&a.parent.callee&&fa(a.parent.callee,"forwardRef"))}function ia(a){return!!(a.parent&&a.parent.callee&&fa(a.parent.callee,"memo"))}function ja(a){for(;a;){var c=ka(a);if(c&&(ea(c)||F(c))||ha(a)||ia(a))return!0;a=a.parent}return!1}
++function ka(a){if("FunctionDeclaration"===a.type||"FunctionExpression"===a.type&&a.id)return a.id;if("FunctionExpression"===a.type||"ArrowFunctionExpression"===a.type)return"VariableDeclarator"===a.parent.type&&a.parent.init===a?a.parent.id:"AssignmentExpression"===a.parent.type&&a.parent.right===a&&"="===a.parent.operator?a.parent.left:"Property"!==a.parent.type||a.parent.value!==a||a.parent.computed?"AssignmentPattern"!==a.parent.type||a.parent.right!==a||a.parent.computed?void 0:a.parent.left:
+ a.parent.key}
+-function I(a){function c(){return{isUsed:!1,isSatisfiedRecursively:!1,isSubtreeUsed:!1,children:new Map}}function b(a,b){b=b.split(".");b=C(b);var l;try{for(b.s();!(l=b.n()).done;){var d=l.value,e=a.children.get(d);e||(e=c(),a.children.set(d,e));a=e}}catch(F){b.e(F)}finally{b.f()}return a}function d(a,c,b){c=c.split(".");c=C(c);var d;try{for(c.s();!(d=c.n()).done;){var e=a.children.get(d.value);if(!e)break;b(e);a=e}}catch(F){c.e(F)}finally{c.f()}}function e(a,c,b,d){a.children.forEach(function(a,l){var f=
+-d(l);a.isSatisfiedRecursively?a.isSubtreeUsed&&b.add(f):a.isUsed?c.add(f):e(a,c,b,function(a){return f+"."+a})})}var n=a.dependencies,h=a.declaredDependencies,x=a.stableDependencies,k=a.externalDependencies,D=a.isEffect,y=c();n.forEach(function(a,c){b(y,c).isUsed=!0;d(y,c,function(a){a.isSubtreeUsed=!0})});h.forEach(function(a){b(y,a.key).isSatisfiedRecursively=!0});x.forEach(function(a){b(y,a).isSatisfiedRecursively=!0});a=new Set;var g=new Set;e(y,a,g,function(a){return a});var f=[],u=new Set,q=
+-new Set;h.forEach(function(a){a=a.key;g.has(a)?-1===f.indexOf(a)?f.push(a):q.add(a):!D||a.endsWith(".current")||k.has(a)?u.add(a):-1===f.indexOf(a)&&f.push(a)});a.forEach(function(a){f.push(a)});return{suggestedDependencies:f,unnecessaryDependencies:u,duplicateDependencies:q,missingDependencies:a}}
+-function R(a){switch(a.type){case "ObjectExpression":return"object";case "ArrayExpression":return"array";case "ArrowFunctionExpression":case "FunctionExpression":return"function";case "ClassExpression":return"class";case "ConditionalExpression":if(null!=R(a.consequent)||null!=R(a.alternate))return"conditional";break;case "LogicalExpression":if(null!=R(a.left)||null!=R(a.right))return"logical expression";break;case "JSXFragment":return"JSX fragment";case "JSXElement":return"JSX element";case "AssignmentExpression":if(null!=
+-R(a.right))return"assignment expression";break;case "NewExpression":return"object construction";case "Literal":if(a.value instanceof RegExp)return"regular expression";break;case "TypeCastExpression":return R(a.expression);case "TSAsExpression":return R(a.expression)}return null}
+-function oa(a){var c=a.declaredDependenciesNode,b=a.componentScope,d=a.scope;return a.declaredDependencies.map(function(a){var c=a.key;a=b.variables.find(function(a){return a.name===c});if(null==a)return null;var d=a.defs[0];if(null==d)return null;if("Variable"===d.type&&"VariableDeclarator"===d.node.type&&"Identifier"===d.node.id.type&&null!=d.node.init){var e=R(d.node.init);if(null!=e)return[a,e]}return"FunctionName"===d.type&&"FunctionDeclaration"===d.node.type?[a,"function"]:"ClassName"===d.type&&
+-"ClassDeclaration"===d.node.type?[a,"class"]:null}).filter(Boolean).map(function(a){var b=a[0];a=a[1];var e=b.defs[0];a:{for(var x=!1,k=0;k<b.references.length;k++){var D=b.references[k];if(D.writeExpr)if(x){b=!0;break a}else{x=!0;continue}for(var y=D.from;y!==d&&null!=y;)y=y.upper;if(y!==d&&!pa(c,D.identifier)){b=!0;break a}}b=!1}return{construction:e,depType:a,isUsedOutsideOfHook:b}})}
+-function ra(a){return"MemberExpression"!==a.parent.type&&"OptionalMemberExpression"!==a.parent.type||a.parent.object!==a||"current"===a.parent.property.name||a.parent.computed||null!=a.parent.parent&&("CallExpression"===a.parent.parent.type||"OptionalCallExpression"===a.parent.parent.type)&&a.parent.parent.callee===a.parent?"MemberExpression"===a.type&&a.parent&&"AssignmentExpression"===a.parent.type&&a.parent.left===a?a.object:a:ra(a.parent)}
+-function V(a,c,b){c&&(a.optional?c.has(b)||c.set(b,!0):c.set(b,!1))}
+-function W(a,c){if("Identifier"===a.type||"JSXIdentifier"===a.type)return a=a.name,c&&c.set(a,!1),a;if("MemberExpression"!==a.type||a.computed){if("OptionalMemberExpression"!==a.type||a.computed){if("ChainExpression"!==a.type||a.computed)throw Error("Unsupported node type: "+a.type);a=a.expression;var b=W(a.object,c),d=W(a.property,null);b=b+"."+d;V(a,c,b);return b}b=W(a.object,c);d=W(a.property,null);b=b+"."+d;V(a,c,b);return b}b=W(a.object,c);d=W(a.property,null);b=b+"."+d;V(a,c,b);return b}
+-function sa(a){return"MemberExpression"!==a.type||"Identifier"!==a.object.type||"React"!==a.object.name||"Identifier"!==a.property.type||a.computed?a:a.property}
+-function ta(a,c){var b=sa(a);if("Identifier"!==b.type)return-1;switch(b.name){case "useEffect":case "useLayoutEffect":case "useCallback":case "useMemo":return 0;case "useImperativeHandle":return 1;default:if(b===a&&c&&c.additionalHooks){try{var d=W(b,null)}catch(e){if(/Unsupported node type/.test(e.message))return 0;throw e;}return c.additionalHooks.test(d)?0:-1}return-1}}
+-function X(a,c){for(var b=[a],d=null;b.length;){d=b.shift();if(("Identifier"===d.type||"JSXIdentifier"===d.type)&&d.type===c.type&&d.name===c.name&&d.range[0]===c.range[0]&&d.range[1]===c.range[1])return d;if(pa(d,c)){a=0;for(var e=Object.entries(d);a<e.length;a++){var n=e[a],h=n[1];"parent"!==n[0]&&(ua(h)?(h.parent=d,b.push(h)):Array.isArray(h)&&h.forEach(function(a){ua(a)&&(a.parent=d,b.push(a))}))}}}return null}
+-function va(a){for(var c="",b=0;b<a.length;b++)c+=a[b],0===b&&2===a.length?c+=" and ":b===a.length-2&&2<a.length?c+=", and ":b<a.length-1&&(c+=", ");return c}function ua(a){return"object"===typeof a&&null!==a&&!Array.isArray(a)&&"string"===typeof a.type}function pa(a,c){return a.range[0]<=c.range[0]&&a.range[1]>=c.range[1]}exports.configs={recommended:{plugins:["react-hooks"],rules:{"react-hooks/rules-of-hooks":"error","react-hooks/exhaustive-deps":"warn"}}};
+-exports.rules={"rules-of-hooks":{meta:{type:"problem",docs:{description:"enforces the Rules of Hooks",category:"Possible Errors",recommended:!0,url:"https://reactjs.org/docs/hooks-rules.html"}},create:function(a){var c=[],b=[];return{onCodePathSegmentStart:function(a){return b.push(a)},onCodePathSegmentEnd:function(){return b.pop()},onCodePathStart:function(){return c.push(new Map)},onCodePathEnd:function(b,e){function d(a,c){var f=d.cache,e=f.get(a.id);c=new Set(c);if(c.has(a.id)){f=[].concat(c);
+-a=f.slice(f.indexOf(a.id)+1);a=C(a);var g;try{for(a.s();!(g=a.n()).done;)D.add(g.value)}catch(B){a.e(B)}finally{a.f()}return 0}c.add(a.id);if(void 0!==e)return e;if(b.thrownSegments.includes(a))e=0;else if(0===a.prevSegments.length)e=1;else{e=0;g=C(a.prevSegments);var E;try{for(g.s();!(E=g.n()).done;)e+=d(E.value,c)}catch(B){g.e(B)}finally{g.f()}}a.reachable&&0===e?f.delete(a.id):f.set(a.id,e);return e}function h(a,c){var d=h.cache,e=d.get(a.id);c=new Set(c);if(c.has(a.id)){d=Array.from(c);a=d.slice(d.indexOf(a.id)+
+-1);a=C(a);var f;try{for(a.s();!(f=a.n()).done;)D.add(f.value)}catch(B){a.e(B)}finally{a.f()}return 0}c.add(a.id);if(void 0!==e)return e;if(b.thrownSegments.includes(a))e=0;else if(0===a.nextSegments.length)e=1;else{e=0;f=C(a.nextSegments);var g;try{for(f.s();!(g=f.n()).done;)e+=h(g.value,c)}catch(B){f.e(B)}finally{f.f()}}d.set(a.id,e);return e}function x(a){var c=x.cache,b=c.get(a.id);if(null===b)return Infinity;if(void 0!==b)return b;c.set(a.id,null);if(0===a.prevSegments.length)b=1;else{b=Infinity;
+-var d=C(a.prevSegments),e;try{for(d.s();!(e=d.n()).done;){var f=x(e.value);f<b&&(b=f)}}catch(B){d.e(B)}finally{d.f()}b+=1}c.set(a.id,b);return b}var k=c.pop();if(0!==k.size){var D=new Set;d.cache=new Map;h.cache=new Map;x.cache=new Map;var y=h(b.initialSegment),g=na(e),f=ma(e),u=g?ea(g)||H(g):ha(e)||ia(e),q=Infinity,l=C(b.finalSegments),ja;try{for(l.s();!(ja=l.n()).done;){var ka=ja.value;if(ka.reachable){var la=x(ka);la<q&&(q=la)}}}catch(E){l.e(E)}finally{l.f()}k=C(k);var z;try{for(k.s();!(z=k.n()).done;){var F=
+-z.value,r=F[0],A=F[1];if(r.reachable){var U=0===r.nextSegments.length?q<=x(r):q<x(r),Z=d(r)*h(r),O=D.has(r.id),v=C(A),P;try{for(v.s();!(P=v.n()).done;){var t=P.value;O&&a.report({node:t,message:'React Hook "'+a.getSource(t)+'" may be executed more than once. Possibly because it is called in a loop. React Hooks must be called in the exact same order in every component render.'});if(u){if(!O&&Z!==y){var N='React Hook "'+a.getSource(t)+'" is called conditionally. React Hooks must be called in the exact same order in every component render.'+
+-(U?" Did you accidentally call a React Hook after an early return?":"");a.report({node:t,message:N})}}else if(e.parent&&("MethodDefinition"===e.parent.type||"ClassProperty"===e.parent.type)&&e.parent.value===e){var K='React Hook "'+a.getSource(t)+'" cannot be called in a class component. React Hooks must be called in a React function component or a custom React Hook function.';a.report({node:t,message:K})}else if(g){var L='React Hook "'+a.getSource(t)+'" is called in function "'+(a.getSource(g)+'" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter.');
+-a.report({node:t,message:L})}else if("Program"===e.type){var p='React Hook "'+a.getSource(t)+'" cannot be called at the top level. React Hooks must be called in a React function component or a custom React Hook function.';a.report({node:t,message:p})}else if(f){var G='React Hook "'+a.getSource(t)+'" cannot be called inside a callback. React Hooks must be called in a React function component or a custom React Hook function.';a.report({node:t,message:G})}}}catch(E){v.e(E)}finally{v.f()}}}}catch(E){k.e(E)}finally{k.f()}}},
+-CallExpression:function(a){if(H(a.callee)){var d=c[c.length-1],n=b[b.length-1],h=d.get(n);h||(h=[],d.set(n,h));h.push(a.callee)}}}}},"exhaustive-deps":{meta:{type:"suggestion",docs:{description:"verifies the list of dependencies for Hooks like useEffect and similar",category:"Best Practices",recommended:!0,url:"https://github.com/facebook/react/issues/14920"},fixable:"code",schema:[{type:"object",additionalProperties:!1,enableDangerousAutofixThisMayCauseInfiniteLoops:!1,properties:{additionalHooks:{type:"string"},
+-enableDangerousAutofixThisMayCauseInfiniteLoops:{type:"boolean"}}}]},create:function(a){function c(c){e&&Array.isArray(c.suggest)&&0<c.suggest.length&&(c.fix=c.suggest[0].fix);a.report(c)}function b(a,c){return function(b){if(c.has(b))return c.get(b);var d=a(b);c.set(b,d);return d}}function d(d,e,u,q,l){function f(a){var c=C(a.references),b;try{for(c.s();!(b=c.n()).done;){var m=b.value;if(m.resolved&&F.has(m.resolved.scope)){var e=X(d,m.identifier),g=ra(e),h=W(g,P),u;if(u=l&&"Identifier"===g.type&&
+-("MemberExpression"===g.parent.type||"OptionalMemberExpression"===g.parent.type)&&!g.parent.computed&&"Identifier"===g.parent.property.type&&"current"===g.parent.property.name){for(var q=m.from,p=!1;q.block!==d;)"function"===q.type&&(p=null!=q.block.parent&&"ReturnStatement"===q.block.parent.type),q=q.upper;u=p}u&&O.set(h,{reference:m,dependencyNode:g});if("TSTypeQuery"!==g.parent.type&&"TSTypeReference"!==g.parent.type){var n=m.resolved.defs[0];if(null!=n&&(null==n.node||n.node.init!==d.parent)&&
+-"TypeParameter"!==n.type)if(v.has(h))v.get(h).references.push(m);else{var r=m.resolved,k=U(r)||Z(r);v.set(h,{isStable:k,references:[m]})}}}}}catch(aa){c.e(aa)}finally{c.f()}a=C(a.childScopes);var t;try{for(a.s();!(t=a.n()).done;)f(t.value)}catch(aa){a.e(aa)}finally{a.f()}}function g(a){a=a.split(".");for(var c="",b=0;b<a.length;b++){if(0!==b){var m=a.slice(0,b+1).join(".");m=!0===P.get(m);c+=m?"?.":"."}c+=a[b]}return c}function n(a,c,b,d){return 0===a.size?null:(1<a.size?"":c+" ")+b+" "+(1<a.size?
+-"dependencies":"dependency")+": "+va(Array.from(a).sort().map(function(a){return"'"+g(a)+"'"}))+(". Either "+d+" "+(1<a.size?"them":"it")+" or remove the dependency array.")}l&&d.async&&c({node:d,message:"Effect callbacks are synchronous to prevent race conditions. Put the async function inside:\n\nuseEffect(() => {\n  async function fetchData() {\n    // You can await here\n    const response = await MyAPI.getData(someId);\n    // ...\n  }\n  fetchData();\n}, [someId]); // Or [] if effect doesn't need props or state\n\nLearn more about data fetching with Hooks: https://reactjs.org/link/hooks-data-fetching"});
+-for(var z=h.acquire(d),F=new Set,r=null,A=z.upper;A;){F.add(A);if("function"===A.type)break;A=A.upper}if(A){r=A;var U=b(function(a){if(!Array.isArray(a.defs))return!1;var c=a.defs[0];if(null==c||"VariableDeclarator"!==c.node.type)return!1;var b=c.node.init;if(null==b)return!1;for(;"TSAsExpression"===b.type;)b=b.expression;var d=c.node.parent;if(null==d&&(X(r.block,c.node.id),d=c.node.parent,null==d))return!1;if("const"===d.kind&&"Literal"===b.type&&("string"===typeof b.value||"number"===typeof b.value||
+-null===b.value))return!0;if("CallExpression"!==b.type)return!1;b=b.callee;"MemberExpression"!==b.type||"React"!==b.object.name||null==b.property||b.computed||(b=b.property);if("Identifier"!==b.type)return!1;c=c.node.id;b=b.name;if("useRef"===b&&"Identifier"===c.type)return!0;if("useState"===b||"useReducer"===b){if("ArrayPattern"===c.type&&2===c.elements.length&&Array.isArray(a.identifiers)){if(c.elements[1]===a.identifiers[0]){if("useState"===b)for(a=a.references,b=0;b<a.length;b++)x.set(a[b].identifier,
+-c.elements[0]);return!0}if(c.elements[0]===a.identifiers[0]&&"useState"===b)for(a=a.references,c=0;c<a.length;c++)k.add(a[c].identifier)}}else if("useTransition"===b&&"ArrayPattern"===c.type&&Array.isArray(a.identifiers)&&c.elements[0]===a.identifiers[0])return!0;return!1},D),Z=b(function(a){if(!Array.isArray(a.defs))return!1;a=a.defs[0];if(null==a||null==a.node||null==a.node.id)return!1;var c=a.node,b=r.childScopes;a=null;var d;for(d=0;d<b.length;d++){var e=b[d],m=e.block;if("FunctionDeclaration"===
+-c.type&&m===c||"VariableDeclarator"===c.type&&m.parent===c){a=e;break}}if(null==a)return!1;for(d=0;d<a.through.length;d++)if(c=a.through[d],null!=c.resolved&&F.has(c.resolved.scope)&&!U(c.resolved))return!1;return!0},y),O=new Map,v=new Map,P=new Map;f(z);O.forEach(function(a,b){var d=a.dependencyNode;a=a.reference.resolved.references;for(var e=!1,m=0;m<a.length;m++){var f=a[m].identifier.parent;if(null!=f&&"MemberExpression"===f.type&&!f.computed&&"Identifier"===f.property.type&&"current"===f.property.name&&
+-"AssignmentExpression"===f.parent.type&&f.parent.left===f){e=!0;break}}e||c({node:d.parent.property,message:"The ref value '"+b+".current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy '"+(b+".current' to a variable inside the effect, and use that variable in the cleanup function.")})});var t=new Set,N=new Set;v.forEach(function(b,d){var e=b.references;b.isStable&&N.add(d);e.forEach(function(b){b.writeExpr&&(b=b.writeExpr,
+-t.has(d)||(t.add(d),c({node:b,message:"Assignments to the '"+d+"' variable from inside React Hook "+(a.getSource(u)+" will be lost after each render. To preserve the value over time, store it in a useRef Hook and keep the mutable value in the '.current' property. Otherwise, you can move this variable directly inside ")+(a.getSource(u)+".")})))})});if(!(0<t.size))if(e){var K=[],L=new Set;"ArrayExpression"!==e.type?c({node:e,message:"React Hook "+a.getSource(u)+" was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."}):
+-e.elements.forEach(function(b){if(null!==b)if("SpreadElement"===b.type)c({node:b,message:"React Hook "+a.getSource(u)+" has a spread element in its dependency array. This means we can't statically verify whether you've passed the correct dependencies."});else{try{var d=W(b,null)}catch(qa){if(/Unsupported node type/.test(qa.message)){"Literal"===b.type?v.has(b.value)?c({node:b,message:"The "+b.raw+" literal is not a valid dependency because it never changes. Did you mean to include "+(b.value+" in the array instead?")}):
+-c({node:b,message:"The "+b.raw+" literal is not a valid dependency because it never changes. You can safely remove it."}):c({node:b,message:"React Hook "+a.getSource(u)+" has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked."});return}throw qa;}for(var e=b;"MemberExpression"===e.type||"OptionalMemberExpression"===e.type||"ChainExpression"===e.type;)e=e.object||e.expression.object;var f=!r.through.some(function(a){return a.identifier===
+-e});K.push({key:d,node:b});f||L.add(d)}});var p=I({dependencies:v,declaredDependencies:K,stableDependencies:N,externalDependencies:L,isEffect:l});A=p.unnecessaryDependencies;var G=p.missingDependencies,E=p.duplicateDependencies,S=p.suggestedDependencies;if(0===E.size+G.size+A.size)oa({declaredDependencies:K,declaredDependenciesNode:e,componentScope:r,scope:z}).forEach(function(a){var b=a.construction,d=a.isUsedOutsideOfHook;a=a.depType;var f="function"===a?"useCallback":"useMemo",g="function"===a?
+-"definition":"initialization",m="wrap the "+g+" of '"+b.name.name+"' in its own "+f+"() Hook.";m="The '"+b.name.name+"' "+a+" "+("conditional"===a||"logical expression"===a?"could make":"makes")+" the dependencies of "+(q+" Hook (at line "+e.loc.start.line+") change on every render. ")+(d?"To fix this, "+m:"Move it inside the "+q+" callback. Alternatively, "+m);var h;d&&"Variable"===b.type&&"function"===a&&(h=[{desc:"Wrap the "+g+" of '"+b.name.name+"' in its own "+f+"() Hook.",fix:function(a){var c=
+-"useMemo"===f?["useMemo(() => { return ","; })"]:["useCallback(",")"],d=c[1];return[a.insertTextBefore(b.node.init,c[0]),a.insertTextAfter(b.node.init,d)]}}]);c({node:b.node,message:m,suggest:h})});else{!l&&0<G.size&&(S=I({dependencies:v,declaredDependencies:[],stableDependencies:N,externalDependencies:L,isEffect:l}).suggestedDependencies);(function(){if(0===K.length)return!0;var a=K.map(function(a){return a.key}),b=a.slice().sort();return a.join(",")===b.join(",")})()&&S.sort();p="";if(0<A.size){var T=
+-null;Array.from(A.keys()).forEach(function(a){null===T&&a.endsWith(".current")&&(T=a)});if(null!==T)p=" Mutable values like '"+T+"' aren't valid dependencies because mutating them doesn't re-render the component.";else if(0<L.size){var J=Array.from(L)[0];z.set.has(J)||(p=" Outer scope values like '"+J+"' aren't valid dependencies because mutating them doesn't re-render the component.")}}if(!p&&G.has("props")){z=v.get("props");if(null==z)return;z=z.references;if(!Array.isArray(z))return;J=!0;for(var Y=
+-0;Y<z.length;Y++){var M=X(r.block,z[Y].identifier);if(!M){J=!1;break}M=M.parent;if(null==M){J=!1;break}if("MemberExpression"!==M.type&&"OptionalMemberExpression"!==M.type){J=!1;break}}J&&(p=" However, 'props' will change when *any* prop changes, so the preferred fix is to destructure the 'props' object outside of the "+(q+" call and refer to those specific props inside ")+(a.getSource(u)+"."))}if(!p&&0<G.size){var B=null;G.forEach(function(a){if(!B){var b=r.set.get(a),c=v.get(a);if(c.references[0].resolved===
+-b&&(b=b.defs[0],null!=b&&null!=b.name&&"Parameter"===b.type)){b=!1;for(var d,e=0;e<c.references.length;e++)if(d=c.references[e].identifier,null!=d&&null!=d.parent&&("CallExpression"===d.parent.type||"OptionalCallExpression"===d.parent.type)&&d.parent.callee===d){b=!0;break}b&&(B=a)}}});null!==B&&(p=" If '"+B+"' changes too often, find the parent component that defines it and wrap that definition in useCallback.")}if(!p&&0<G.size){var w=null;G.forEach(function(a){if(null===w)for(var b=v.get(a).references,
+-c,d,e=0;e<b.length;e++){c=b[e].identifier;for(d=c.parent;null!=d&&d!==r.block;){if("CallExpression"===d.type){var f=x.get(d.callee);if(null!=f){f.name===a?w={missingDep:a,setter:d.callee.name,form:"updater"}:k.has(c)?w={missingDep:a,setter:d.callee.name,form:"reducer"}:(c=b[e].resolved,null!=c&&(c=c.defs[0],null!=c&&"Parameter"===c.type&&(w={missingDep:a,setter:d.callee.name,form:"inlineReducer"})));break}}d=d.parent}if(null!==w)break}});if(null!==w)switch(w.form){case "reducer":p=" You can also replace multiple useState variables with useReducer if '"+
+-(w.setter+"' needs the current value of '")+(w.missingDep+"'.");break;case "inlineReducer":p=" If '"+w.setter+"' needs the current value of '"+(w.missingDep+"', you can also switch to useReducer instead of useState and read '")+(w.missingDep+"' in the reducer.");break;case "updater":p=" You can also do a functional update '"+w.setter+"("+w.missingDep.substring(0,1)+" => ...)' if you only need '"+w.missingDep+"' in the '"+(w.setter+"' call.");break;default:throw Error("Unknown case.");}}c({node:e,
+-message:"React Hook "+a.getSource(u)+" has "+(n(G,"a","missing","include")||n(A,"an","unnecessary","exclude")||n(E,"a","duplicate","omit"))+p,suggest:[{desc:"Update the dependencies array to be: ["+S.map(g).join(", ")+"]",fix:function(a){return a.replaceText(e,"["+S.map(g).join(", ")+"]")}}]})}}else{var Q=null;v.forEach(function(a,b){Q||a.references.forEach(function(a){if(!Q&&x.has(a.identifier)){for(a=a.from;"function"!==a.type;)a=a.upper;a.block===d&&(Q=b)}})});if(Q){var ba=I({dependencies:v,declaredDependencies:[],
+-stableDependencies:N,externalDependencies:new Set,isEffect:!0}).suggestedDependencies;c({node:u,message:"React Hook "+q+" contains a call to '"+Q+"'. Without a list of dependencies, this can lead to an infinite chain of updates. To fix this, pass ["+ba.join(", ")+("] as a second argument to the "+q+" Hook."),suggest:[{desc:"Add dependencies array: ["+ba.join(", ")+"]",fix:function(a){return a.insertTextAfter(d,", ["+ba.join(", ")+"]")}}]})}}}}var e=a.options&&a.options[0]&&a.options[0].enableDangerousAutofixThisMayCauseInfiniteLoops||
+-!1,n={additionalHooks:a.options&&a.options[0]&&a.options[0].additionalHooks?new RegExp(a.options[0].additionalHooks):void 0,enableDangerousAutofixThisMayCauseInfiniteLoops:e},h=a.getSourceCode().scopeManager,x=new WeakMap,k=new WeakSet,D=new WeakMap,y=new WeakMap;return{CallExpression:function(b){var e=ta(b.callee,n);if(-1!==e){var g=b.arguments[e],h=b.callee,l=sa(h).name,k=b.arguments[e+1];b=/Effect($|[^a-z])/g.test(l);if(k||b){switch(g.type){case "FunctionExpression":case "ArrowFunctionExpression":d(g,
+-k,h,l,b);return;case "Identifier":if(!k||k.elements&&k.elements.some(function(a){return a&&"Identifier"===a.type&&a.name===g.name}))return;e=a.getScope().set.get(g.name);if(null==e||null==e.defs)return;e=e.defs[0];if(!e||!e.node)break;if("Variable"!==e.type&&"FunctionName"!==e.type)break;switch(e.node.type){case "FunctionDeclaration":d(e.node,k,h,l,b);return;case "VariableDeclarator":if(e=e.node.init)switch(e.type){case "ArrowFunctionExpression":case "FunctionExpression":d(e,k,h,l,b);return}}break;
+-default:c({node:h,message:"React Hook "+l+" received a function whose dependencies are unknown. Pass an inline function instead."});return}c({node:h,message:"React Hook "+l+" has a missing dependency: '"+g.name+"'. Either include it or remove the dependency array.",suggest:[{desc:"Update the dependencies array to be: ["+g.name+"]",fix:function(a){return a.replaceText(k,"["+g.name+"]")}}]})}else"useMemo"!==l&&"useCallback"!==l||c({node:h,message:"React Hook "+l+" does nothing when called with only one argument. Did you forget to pass an array of dependencies?"})}}}}}};
++function H(a){function c(){return{isUsed:!1,isSatisfiedRecursively:!1,isSubtreeUsed:!1,children:new Map}}function b(a,b){b=b.split(".");b=w(b);var l;try{for(b.s();!(l=b.n()).done;){var d=l.value,e=a.children.get(d);e||(e=c(),a.children.set(d,e));a=e}}catch(r){b.e(r)}finally{b.f()}return a}function d(a,c,b){c=c.split(".");c=w(c);var d;try{for(c.s();!(d=c.n()).done;){var l=a.children.get(d.value);if(!l)break;b(l);a=l}}catch(r){c.e(r)}finally{c.f()}}function e(a,c,b,d){a.children.forEach(function(a,l){var g=
++d(l);a.isSatisfiedRecursively?a.isSubtreeUsed&&b.add(g):a.isUsed?c.add(g):e(a,c,b,function(a){return g+"."+a})})}var y=a.dependencies,g=a.declaredDependencies,x=a.stableDependencies,n=a.externalDependencies,A=a.isEffect,u=c();y.forEach(function(a,c){b(u,c).isUsed=!0;d(u,c,function(a){a.isSubtreeUsed=!0})});g.forEach(function(a){b(u,a.key).isSatisfiedRecursively=!0});x.forEach(function(a){b(u,a).isSatisfiedRecursively=!0});a=new Set;var D=new Set;e(u,a,D,function(a){return a});var m=[],f=new Set,p=
++new Set;g.forEach(function(a){a=a.key;D.has(a)?-1===m.indexOf(a)?m.push(a):p.add(a):!A||a.endsWith(".current")||n.has(a)?f.add(a):-1===m.indexOf(a)&&m.push(a)});a.forEach(function(a){m.push(a)});return{suggestedDependencies:m,unnecessaryDependencies:f,duplicateDependencies:p,missingDependencies:a}}
++function U(a){switch(a.type){case "ObjectExpression":return"object";case "ArrayExpression":return"array";case "ArrowFunctionExpression":case "FunctionExpression":return"function";case "ClassExpression":return"class";case "ConditionalExpression":if(null!=U(a.consequent)||null!=U(a.alternate))return"conditional";break;case "LogicalExpression":if(null!=U(a.left)||null!=U(a.right))return"logical expression";break;case "JSXFragment":return"JSX fragment";case "JSXElement":return"JSX element";case "AssignmentExpression":if(null!=
++U(a.right))return"assignment expression";break;case "NewExpression":return"object construction";case "Literal":if(a.value instanceof RegExp)return"regular expression";break;case "TypeCastExpression":return U(a.expression);case "TSAsExpression":return U(a.expression)}return null}
++function oa(a){var c=a.declaredDependenciesNode,b=a.componentScope,d=a.scope;return a.declaredDependencies.map(function(a){var c=a.key;a=b.variables.find(function(a){return a.name===c});if(null==a)return null;var d=a.defs[0];if(null==d)return null;if("Variable"===d.type&&"VariableDeclarator"===d.node.type&&"Identifier"===d.node.id.type&&null!=d.node.init){var e=U(d.node.init);if(null!=e)return[a,e]}return"FunctionName"===d.type&&"FunctionDeclaration"===d.node.type?[a,"function"]:"ClassName"===d.type&&
++"ClassDeclaration"===d.node.type?[a,"class"]:null}).filter(Boolean).map(function(a){var b=a[0];a=a[1];var e=b.defs[0];a:{for(var x=!1,n=0;n<b.references.length;n++){var A=b.references[n];if(A.writeExpr)if(x){b=!0;break a}else{x=!0;continue}for(var u=A.from;u!==d&&null!=u;)u=u.upper;if(u!==d&&!pa(c,A.identifier)){b=!0;break a}}b=!1}return{construction:e,depType:a,isUsedOutsideOfHook:b}})}
++function qa(a){return"MemberExpression"!==a.parent.type&&"OptionalMemberExpression"!==a.parent.type||a.parent.object!==a||"current"===a.parent.property.name||a.parent.computed||null!=a.parent.parent&&("CallExpression"===a.parent.parent.type||"OptionalCallExpression"===a.parent.parent.type)&&a.parent.parent.callee===a.parent?"MemberExpression"===a.type&&a.parent&&"AssignmentExpression"===a.parent.type&&a.parent.left===a?a.object:a:qa(a.parent)}
++function ra(a,c,b){c&&(a.optional?c.has(b)||c.set(b,!0):c.set(b,!1))}
++function Z(a,c){if("Identifier"===a.type||"JSXIdentifier"===a.type)return a=a.name,c&&c.set(a,!1),a;if("MemberExpression"!==a.type||a.computed){if("OptionalMemberExpression"!==a.type||a.computed){if("ChainExpression"!==a.type||a.computed)throw Error("Unsupported node type: "+a.type);a=a.expression;if("CallExpression"===a.type)throw Error("Unsupported node type: "+a.type);var b=Z(a.object,c),d=Z(a.property,null);b=b+"."+d;ra(a,c,b);return b}b=Z(a.object,c);d=Z(a.property,null);b=b+"."+d;ra(a,c,b);
++return b}b=Z(a.object,c);d=Z(a.property,null);b=b+"."+d;ra(a,c,b);return b}function ua(a){return"MemberExpression"!==a.type||"Identifier"!==a.object.type||"React"!==a.object.name||"Identifier"!==a.property.type||a.computed?a:a.property}
++function va(a,c){var b=ua(a);if("Identifier"!==b.type)return-1;switch(b.name){case "useEffect":case "useLayoutEffect":case "useCallback":case "useMemo":return 0;case "useImperativeHandle":return 1;default:if(b===a&&c&&c.additionalHooks){try{var d=Z(b,null)}catch(e){if(/Unsupported node type/.test(e.message))return 0;throw e;}return c.additionalHooks.test(d)?0:-1}return-1}}
++function wa(a,c){for(var b=[a],d=null;b.length;){d=b.shift();if(("Identifier"===d.type||"JSXIdentifier"===d.type)&&d.type===c.type&&d.name===c.name&&d.range[0]===c.range[0]&&d.range[1]===c.range[1])return d;if(pa(d,c)){a=0;for(var e=Object.entries(d);a<e.length;a++){var y=e[a],g=y[1];"parent"!==y[0]&&(xa(g)?(g.parent=d,b.push(g)):Array.isArray(g)&&g.forEach(function(a){xa(a)&&(a.parent=d,b.push(a))}))}}}return null}
++function ya(a){for(var c="",b=0;b<a.length;b++)c+=a[b],0===b&&2===a.length?c+=" and ":b===a.length-2&&2<a.length?c+=", and ":b<a.length-1&&(c+=", ");return c}function xa(a){return"object"===typeof a&&null!==a&&!Array.isArray(a)&&"string"===typeof a.type}function pa(a,c){return a.range[0]<=c.range[0]&&a.range[1]>=c.range[1]}exports.configs={recommended:{plugins:["react-hooks"],rules:{"react-hooks/rules-of-hooks":"error","react-hooks/exhaustive-deps":"warn"}}};
++exports.rules={"rules-of-hooks":{meta:{type:"problem",docs:{description:"enforces the Rules of Hooks",category:"Possible Errors",recommended:!0,url:"https://reactjs.org/docs/hooks-rules.html"}},create:function(a){var c=[],b=[];return{onCodePathSegmentStart:function(a){return b.push(a)},onCodePathSegmentEnd:function(){return b.pop()},onCodePathStart:function(){return c.push(new Map)},onCodePathEnd:function(b,e){function d(a,c){var k=d.cache,e=k.get(a.id);c=new Set(c);if(c.has(a.id)){k=[].concat(c);
++a=k.slice(k.indexOf(a.id)+1);a=w(a);var f;try{for(a.s();!(f=a.n()).done;)A.add(f.value)}catch(z){a.e(z)}finally{a.f()}return 0}c.add(a.id);if(void 0!==e)return e;if(b.thrownSegments.includes(a))e=0;else if(0===a.prevSegments.length)e=1;else{e=0;f=w(a.prevSegments);var m;try{for(f.s();!(m=f.n()).done;)e+=d(m.value,c)}catch(z){f.e(z)}finally{f.f()}}a.reachable&&0===e?k.delete(a.id):k.set(a.id,e);return e}function g(a,c){var d=g.cache,e=d.get(a.id);c=new Set(c);if(c.has(a.id)){d=Array.from(c);a=d.slice(d.indexOf(a.id)+
++1);a=w(a);var f;try{for(a.s();!(f=a.n()).done;)A.add(f.value)}catch(z){a.e(z)}finally{a.f()}return 0}c.add(a.id);if(void 0!==e)return e;if(b.thrownSegments.includes(a))e=0;else if(0===a.nextSegments.length)e=1;else{e=0;f=w(a.nextSegments);var m;try{for(f.s();!(m=f.n()).done;)e+=g(m.value,c)}catch(z){f.e(z)}finally{f.f()}}d.set(a.id,e);return e}function x(a){var c=x.cache,b=c.get(a.id);if(null===b)return Infinity;if(void 0!==b)return b;c.set(a.id,null);if(0===a.prevSegments.length)b=1;else{b=Infinity;
++var d=w(a.prevSegments),e;try{for(d.s();!(e=d.n()).done;){var f=x(e.value);f<b&&(b=f)}}catch(z){d.e(z)}finally{d.f()}b+=1}c.set(a.id,b);return b}var n=c.pop();if(0!==n.size){var A=new Set;d.cache=new Map;g.cache=new Map;x.cache=new Map;var u=g(b.initialSegment),D=ka(e),m=ja(e),f=D?ea(D)||F(D):ha(e)||ia(e),p=Infinity,l=w(b.finalSegments),G;try{for(l.s();!(G=l.n()).done;){var la=G.value;if(la.reachable){var ma=x(la);ma<p&&(p=ma)}}}catch(k){l.e(k)}finally{l.f()}n=w(n);var na;try{for(n.s();!(na=n.n()).done;){var r=
++na.value,B=r[0],C=r[1];if(B.reachable){var v=0===B.nextSegments.length?p<=x(B):p<x(B),K=d(B)*g(B),Q=A.has(B.id),N=w(C),R;try{for(N.s();!(R=N.n()).done;){var q=R.value;Q&&a.report({node:q,message:'React Hook "'+a.getSource(q)+'" may be executed more than once. Possibly because it is called in a loop. React Hooks must be called in the exact same order in every component render.'});if(f){if(!Q&&K!==u){var X='React Hook "'+a.getSource(q)+'" is called conditionally. React Hooks must be called in the exact same order in every component render.'+
++(v?" Did you accidentally call a React Hook after an early return?":"");a.report({node:q,message:X})}}else if(e.parent&&("MethodDefinition"===e.parent.type||"ClassProperty"===e.parent.type)&&e.parent.value===e){var S='React Hook "'+a.getSource(q)+'" cannot be called in a class component. React Hooks must be called in a React function component or a custom React Hook function.';a.report({node:q,message:S})}else if(D){var O='React Hook "'+a.getSource(q)+'" is called in function "'+(a.getSource(D)+'" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use".');
++a.report({node:q,message:O})}else if("Program"===e.type){var L='React Hook "'+a.getSource(q)+'" cannot be called at the top level. React Hooks must be called in a React function component or a custom React Hook function.';a.report({node:q,message:L})}else if(m){var M='React Hook "'+a.getSource(q)+'" cannot be called inside a callback. React Hooks must be called in a React function component or a custom React Hook function.';a.report({node:q,message:M})}}}catch(k){N.e(k)}finally{N.f()}}}}catch(k){n.e(k)}finally{n.f()}}},
++CallExpression:function(a){if(F(a.callee)){var d=c[c.length-1],y=b[b.length-1],g=d.get(y);g||(g=[],d.set(y,g));g.push(a.callee)}}}}},"exhaustive-deps":{meta:{type:"suggestion",docs:{description:"verifies the list of dependencies for Hooks like useEffect and similar",category:"Best Practices",recommended:!0,url:"https://github.com/facebook/react/issues/14920"},fixable:"code",schema:[{type:"object",additionalProperties:!1,enableDangerousAutofixThisMayCauseInfiniteLoops:!1,properties:{additionalHooks:{type:"string"},
++enableDangerousAutofixThisMayCauseInfiniteLoops:{type:"boolean"},stableHooks:{type:"array",items:{type:"array"}}}}]},create:function(a){function c(c){e&&Array.isArray(c.suggest)&&0<c.suggest.length&&(c.fix=c.suggest[0].fix);a.report(c)}function b(a,c){return function(b){if(c.has(b))return c.get(b);var d=a(b);c.set(b,d);return d}}function d(d,e,g,l,G){function f(a){var c=w(a.references),b;try{for(c.s();!(b=c.n()).done;){var h=b.value;if(h.resolved&&B.has(h.resolved.scope)){var e=wa(d,h.identifier),
++E=qa(e),g=Z(E,X),k;if(k=G&&"Identifier"===E.type&&("MemberExpression"===E.parent.type||"OptionalMemberExpression"===E.parent.type)&&!E.parent.computed&&"Identifier"===E.parent.property.type&&"current"===E.parent.property.name){for(var l=h.from,m=!1;l.block!==d;)"function"===l.type&&(m=null!=l.block.parent&&"ReturnStatement"===l.block.parent.type),l=l.upper;k=m}k&&R.set(g,{reference:h,dependencyNode:E});if("TSTypeQuery"!==E.parent.type&&"TSTypeReference"!==E.parent.type){var p=h.resolved.defs[0];if(null!=
++p&&(null==p.node||p.node.init!==d.parent)&&"TypeParameter"!==p.type)if(q.has(g))q.get(g).references.push(h);else{var r=h.resolved,n=Q(r)||N(r);q.set(g,{isStable:n,references:[h]})}}}}}catch(ca){c.e(ca)}finally{c.f()}a=w(a.childScopes);var t;try{for(a.s();!(t=a.n()).done;)f(t.value)}catch(ca){a.e(ca)}finally{a.f()}}function m(a){a=a.split(".");for(var c="",b=0;b<a.length;b++){if(0!==b){var h=a.slice(0,b+1).join(".");h=!0===X.get(h);c+=h?"?.":"."}c+=a[b]}return c}function p(a,c,b,d){return 0===a.size?
++null:(1<a.size?"":c+" ")+b+" "+(1<a.size?"dependencies":"dependency")+": "+ya(Array.from(a).sort().map(function(a){return"'"+m(a)+"'"}))+(". Either "+d+" "+(1<a.size?"them":"it")+" or remove the dependency array.")}G&&d.async&&c({node:d,message:"Effect callbacks are synchronous to prevent race conditions. Put the async function inside:\n\nuseEffect(() => {\n  async function fetchData() {\n    // You can await here\n    const response = await MyAPI.getData(someId);\n    // ...\n  }\n  fetchData();\n}, [someId]); // Or [] if effect doesn't need props or state\n\nLearn more about data fetching with Hooks: https://reactjs.org/link/hooks-data-fetching"});
++for(var r=x.acquire(d),B=new Set,C=null,v=r.upper;v;){B.add(v);if("function"===v.type)break;v=v.upper}if(v){C=v;var K=Array.isArray,Q=b(function(a){if(!K(a.defs))return!1;var c=a.defs[0];if(null==c||"VariableDeclarator"!==c.node.type)return!1;var b=c.node.init;if(null==b)return!1;for(;"TSAsExpression"===b.type;)b=b.expression;var d=c.node.parent;if(null==d&&(wa(C.block,c.node.id),d=c.node.parent,null==d))return!1;if("const"===d.kind&&"Literal"===b.type&&("string"===typeof b.value||"number"===typeof b.value||
++null===b.value))return!0;if("CallExpression"!==b.type)return!1;b=b.callee;"MemberExpression"!==b.type||"React"!==b.object.name||null==b.property||b.computed||(b=b.property);if("Identifier"!==b.type)return!1;var h=c.node.id,e=b.name;if("useRef"===e&&"Identifier"===h.type)return!0;if("useState"===e||"useReducer"===e){if("ArrayPattern"===h.type&&2===h.elements.length&&K(a.identifiers)){if(h.elements[1]===a.identifiers[0]){if("useState"===e){var f=a.references;for(c=0;c<f.length;c++)n.set(f[c].identifier,
++h.elements[0])}return!0}if(h.elements[0]===a.identifiers[0]&&"useState"===e)for(f=a.references,c=0;c<f.length;c++)A.add(f[c].identifier)}}else if("useTransition"===e){if("ArrayPattern"===h.type&&2===h.elements.length&&Array.isArray(a.identifiers)&&h.elements[1]===a.identifiers[0])return!0}else if(c=y.find(function(a){return a[0]===e})){c=c.slice(1);if(0===c.length&&"Identifier"===h.type)return!0;if("ArrayPattern"===h.type&&0<h.elements.length&&K(a.identifiers)){b=w(c);try{for(b.s();!(f=b.n()).done;)if(h.elements[f.value]===
++a.identifiers[0])return!0}catch(za){b.e(za)}finally{b.f()}}if("ObjectPattern"===h.type&&0<h.properties.length&&K(a.identifiers)&&c.some(function(c){var b=h.properties.find(function(a){return a.key.name===c||a.key.value===c});if(b&&b.value===a.identifiers[0])return!0}))return!0}return!1},u),N=b(function(a){if(!K(a.defs))return!1;a=a.defs[0];if(null==a||null==a.node||null==a.node.id)return!1;var c=a.node,b=C.childScopes;a=null;var d;for(d=0;d<b.length;d++){var h=b[d],e=h.block;if("FunctionDeclaration"===
++c.type&&e===c||"VariableDeclarator"===c.type&&e.parent===c){a=h;break}}if(null==a)return!1;for(d=0;d<a.through.length;d++)if(c=a.through[d],null!=c.resolved&&B.has(c.resolved.scope)&&!Q(c.resolved))return!1;return!0},D),R=new Map,q=new Map,X=new Map;f(r);R.forEach(function(a,b){var d=a.dependencyNode;a=a.reference.resolved.references;for(var h=!1,e=0;e<a.length;e++){var f=a[e].identifier.parent;if(null!=f&&"MemberExpression"===f.type&&!f.computed&&"Identifier"===f.property.type&&"current"===f.property.name&&
++"AssignmentExpression"===f.parent.type&&f.parent.left===f){h=!0;break}}h||c({node:d.parent.property,message:"The ref value '"+b+".current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy '"+(b+".current' to a variable inside the effect, and use that variable in the cleanup function.")})});var S=new Set,O=new Set;q.forEach(function(b,d){var h=b.references;b.isStable&&O.add(d);h.forEach(function(b){b.writeExpr&&(b=b.writeExpr,
++S.has(d)||(S.add(d),c({node:b,message:"Assignments to the '"+d+"' variable from inside React Hook "+(a.getSource(g)+" will be lost after each render. To preserve the value over time, store it in a useRef Hook and keep the mutable value in the '.current' property. Otherwise, you can move this variable directly inside ")+(a.getSource(g)+".")})))})});if(!(0<S.size))if(e){var L=[],M=new Set;"ArrayExpression"!==e.type?c({node:e,message:"React Hook "+a.getSource(g)+" was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."}):
++e.elements.forEach(function(b){if(null!==b)if("SpreadElement"===b.type)c({node:b,message:"React Hook "+a.getSource(g)+" has a spread element in its dependency array. This means we can't statically verify whether you've passed the correct dependencies."});else{try{var d=Z(b,null)}catch(ta){if(/Unsupported node type/.test(ta.message)){"Literal"===b.type?q.has(b.value)?c({node:b,message:"The "+b.raw+" literal is not a valid dependency because it never changes. Did you mean to include "+(b.value+" in the array instead?")}):
++c({node:b,message:"The "+b.raw+" literal is not a valid dependency because it never changes. You can safely remove it."}):c({node:b,message:"React Hook "+a.getSource(g)+" has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked."});return}throw ta;}for(var e=b;"MemberExpression"===e.type||"OptionalMemberExpression"===e.type||"ChainExpression"===e.type;)e=e.object||e.expression.object;var h=!C.through.some(function(a){return a.identifier===
++e});L.push({key:d,node:b});h||M.add(d)}});var k=H({dependencies:q,declaredDependencies:L,stableDependencies:O,externalDependencies:M,isEffect:G});v=k.unnecessaryDependencies;var I=k.missingDependencies,sa=k.duplicateDependencies,V=k.suggestedDependencies;if(0===sa.size+I.size+v.size)oa({declaredDependencies:L,declaredDependenciesNode:e,componentScope:C,scope:r}).forEach(function(a){var b=a.construction,d=a.isUsedOutsideOfHook;a=a.depType;var f="function"===a?"useCallback":"useMemo",h="function"===
++a?"definition":"initialization",g="wrap the "+h+" of '"+b.name.name+"' in its own "+f+"() Hook.";g="The '"+b.name.name+"' "+a+" "+("conditional"===a||"logical expression"===a?"could make":"makes")+" the dependencies of "+(l+" Hook (at line "+e.loc.start.line+") change on every render. ")+(d?"To fix this, "+g:"Move it inside the "+l+" callback. Alternatively, "+g);var k;d&&"Variable"===b.type&&"function"===a&&(k=[{desc:"Wrap the "+h+" of '"+b.name.name+"' in its own "+f+"() Hook.",fix:function(a){var c=
++"useMemo"===f?["useMemo(() => { return ","; })"]:["useCallback(",")"],d=c[1];return[a.insertTextBefore(b.node.init,c[0]),a.insertTextAfter(b.node.init,d)]}}]);c({node:b.node,message:g,suggest:k})});else{!G&&0<I.size&&(V=H({dependencies:q,declaredDependencies:[],stableDependencies:O,externalDependencies:M,isEffect:G}).suggestedDependencies);(function(){if(0===L.length)return!0;var a=L.map(function(a){return a.key}),b=a.slice().sort();return a.join(",")===b.join(",")})()&&V.sort();k="";if(0<v.size){var W=
++null;Array.from(v.keys()).forEach(function(a){null===W&&a.endsWith(".current")&&(W=a)});if(null!==W)k=" Mutable values like '"+W+"' aren't valid dependencies because mutating them doesn't re-render the component.";else if(0<M.size){var J=Array.from(M)[0];r.set.has(J)||(k=" Outer scope values like '"+J+"' aren't valid dependencies because mutating them doesn't re-render the component.")}}if(!k&&I.has("props")){r=q.get("props");if(null==r)return;r=r.references;if(!Array.isArray(r))return;J=!0;for(var z=
++0;z<r.length;z++){var P=wa(C.block,r[z].identifier);if(!P){J=!1;break}P=P.parent;if(null==P){J=!1;break}if("MemberExpression"!==P.type&&"OptionalMemberExpression"!==P.type){J=!1;break}}J&&(k=" However, 'props' will change when *any* prop changes, so the preferred fix is to destructure the 'props' object outside of the "+(l+" call and refer to those specific props inside ")+(a.getSource(g)+"."))}if(!k&&0<I.size){var Y=null;I.forEach(function(a){if(!Y){var b=C.set.get(a),c=q.get(a);if(c.references[0].resolved===
++b&&(b=b.defs[0],null!=b&&null!=b.name&&"Parameter"===b.type)){b=!1;for(var d,e=0;e<c.references.length;e++)if(d=c.references[e].identifier,null!=d&&null!=d.parent&&("CallExpression"===d.parent.type||"OptionalCallExpression"===d.parent.type)&&d.parent.callee===d){b=!0;break}b&&(Y=a)}}});null!==Y&&(k=" If '"+Y+"' changes too often, find the parent component that defines it and wrap that definition in useCallback.")}if(!k&&0<I.size){var t=null;I.forEach(function(a){if(null===t)for(var b=q.get(a).references,
++c,d,e=0;e<b.length;e++){c=b[e].identifier;for(d=c.parent;null!=d&&d!==C.block;){if("CallExpression"===d.type){var f=n.get(d.callee);if(null!=f){f.name===a?t={missingDep:a,setter:d.callee.name,form:"updater"}:A.has(c)?t={missingDep:a,setter:d.callee.name,form:"reducer"}:(c=b[e].resolved,null!=c&&(c=c.defs[0],null!=c&&"Parameter"===c.type&&(t={missingDep:a,setter:d.callee.name,form:"inlineReducer"})));break}}d=d.parent}if(null!==t)break}});if(null!==t)switch(t.form){case "reducer":k=" You can also replace multiple useState variables with useReducer if '"+
++(t.setter+"' needs the current value of '")+(t.missingDep+"'.");break;case "inlineReducer":k=" If '"+t.setter+"' needs the current value of '"+(t.missingDep+"', you can also switch to useReducer instead of useState and read '")+(t.missingDep+"' in the reducer.");break;case "updater":k=" You can also do a functional update '"+t.setter+"("+t.missingDep.substring(0,1)+" => ...)' if you only need '"+t.missingDep+"' in the '"+(t.setter+"' call.");break;default:throw Error("Unknown case.");}}c({node:e,
++message:"React Hook "+a.getSource(g)+" has "+(p(I,"a","missing","include")||p(v,"an","unnecessary","exclude")||p(sa,"a","duplicate","omit"))+k,suggest:[{desc:"Update the dependencies array to be: ["+V.map(m).join(", ")+"]",fix:function(a){return a.replaceText(e,"["+V.map(m).join(", ")+"]")}}]})}}else{var T=null;q.forEach(function(a,b){T||a.references.forEach(function(a){if(!T&&n.has(a.identifier)){for(a=a.from;"function"!==a.type;)a=a.upper;a.block===d&&(T=b)}})});if(T){var da=H({dependencies:q,declaredDependencies:[],
++stableDependencies:O,externalDependencies:new Set,isEffect:!0}).suggestedDependencies;c({node:g,message:"React Hook "+l+" contains a call to '"+T+"'. Without a list of dependencies, this can lead to an infinite chain of updates. To fix this, pass ["+da.join(", ")+("] as a second argument to the "+l+" Hook."),suggest:[{desc:"Add dependencies array: ["+da.join(", ")+"]",fix:function(a){return a.insertTextAfter(d,", ["+da.join(", ")+"]")}}]})}}}}var e=a.options&&a.options[0]&&a.options[0].enableDangerousAutofixThisMayCauseInfiniteLoops||
++!1,y=a.options&&a.options[0]&&a.options[0].stableHooks?a.options[0].stableHooks:[],g={additionalHooks:a.options&&a.options[0]&&a.options[0].additionalHooks?new RegExp(a.options[0].additionalHooks):void 0,enableDangerousAutofixThisMayCauseInfiniteLoops:e,stableHooks:y},x=a.getSourceCode().scopeManager,n=new WeakMap,A=new WeakSet,u=new WeakMap,D=new WeakMap;return{CallExpression:function(b){var e=va(b.callee,g);if(-1!==e){var p=b.arguments[e],l=b.callee,m=ua(l).name,n=b.arguments[e+1];b=/Effect($|[^a-z])/g.test(m);
++if(p)if(n||b){switch(p.type){case "FunctionExpression":case "ArrowFunctionExpression":d(p,n,l,m,b);return;case "Identifier":if(!n||n.elements&&n.elements.some(function(a){return a&&"Identifier"===a.type&&a.name===p.name}))return;e=a.getScope().set.get(p.name);if(null==e||null==e.defs)return;e=e.defs[0];if(!e||!e.node)break;if("Variable"!==e.type&&"FunctionName"!==e.type)break;switch(e.node.type){case "FunctionDeclaration":d(e.node,n,l,m,b);return;case "VariableDeclarator":if(e=e.node.init)switch(e.type){case "ArrowFunctionExpression":case "FunctionExpression":d(e,
++n,l,m,b);return}}break;default:c({node:l,message:"React Hook "+m+" received a function whose dependencies are unknown. Pass an inline function instead."});return}c({node:l,message:"React Hook "+m+" has a missing dependency: '"+p.name+"'. Either include it or remove the dependency array.",suggest:[{desc:"Update the dependencies array to be: ["+p.name+"]",fix:function(a){return a.replaceText(n,"["+p.name+"]")}}]})}else"useMemo"!==m&&"useCallback"!==m||c({node:l,message:"React Hook "+m+" does nothing when called with only one argument. Did you forget to pass an array of dependencies?"});
++else c({node:l,message:"React Hook "+m+" requires an effect callback. Did you forget to pass a callback to the hook?"})}}}}}};

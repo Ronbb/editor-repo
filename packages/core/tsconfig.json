@@ -16,8 +16,8 @@
     "jsx": "react",
     "baseUrl": "./",
     "paths": {
-      "@": ["src"],
-      "@@": ["demo"]
+      "@/*": ["src/*"],
+      "@@/*": ["demo/*"]
     }
   },
   "include": ["demo", "src"]

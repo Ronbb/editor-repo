@@ -2503,7 +2503,7 @@ __metadata:
     eslint-plugin-jest: ^24.4.0
     eslint-plugin-jsx-a11y: ^6.4.1
     eslint-plugin-react: ^7.25.1
-    eslint-plugin-react-hooks: ^4.2.0
+    eslint-plugin-react-hooks: 4.2.0
     jest: ^27.1.0
     prettier: ^2.3.2
     typescript: ^4.5.0-dev
@@ -2752,12 +2752,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-react-hooks@npm:^4.2.0":
+"eslint-plugin-react-hooks@npm:4.2.0":
   version: 4.2.0
   resolution: "eslint-plugin-react-hooks@npm:4.2.0"
   peerDependencies:
     eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
   checksum: ead5c5be3ded82a0cf295b064376adb1998a43e2262b605eecc0efc88283dec4e159ca39307fafb3d8e661dd08e5a4c8cdfed97eea78f923954f72bad6e20397
+  languageName: node
+  linkType: hard
+
+"eslint-plugin-react-hooks@patch:eslint-plugin-react-hooks@npm:4.2.0#.yarn/patches/eslint-plugin-react-hooks-npm-4.2.0-e09b1ea4ce::locator=editor-repo%40workspace%3A.":
+  version: 4.2.0
+  resolution: "eslint-plugin-react-hooks@patch:eslint-plugin-react-hooks@npm%3A4.2.0#.yarn/patches/eslint-plugin-react-hooks-npm-4.2.0-e09b1ea4ce::version=4.2.0&hash=e61bd1&locator=editor-repo%40workspace%3A."
+  peerDependencies:
+    eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+  checksum: ae389186d4cfbeaa8987daa74ec9e53bf47a0c42921ed81d42d068ed1644484474b91a8517ff30a5c8c74d0f3613c67c801cea226a5ca3ca8e41f137b7ebecaf
   languageName: node
   linkType: hard
 
@@ -6362,12 +6371,12 @@ typescript@^4.4.2:
   linkType: hard
 
 typescript@^4.5.0-dev:
-  version: 4.5.0-dev.20210821
-  resolution: "typescript@npm:4.5.0-dev.20210821"
+  version: 4.5.0-dev.20210903
+  resolution: "typescript@npm:4.5.0-dev.20210903"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 7fd1abac676e8dbcd703f319bf19e1c98b52fae1d48d4a3b9d245c079ba50f7c2c3948222b809adb5f255426b0925857aac0f32aacf1c60f8d31b1a92e6bfdc7
+  checksum: c67e9e8c11ca7f7b6fba552386f48571eda4df2012f2968af5786bc25bb4260b60384cc763e459e256d59753f5a214f4b8e499361d89ccc14a5470682d0fd314
   languageName: node
   linkType: hard
 
@@ -6382,12 +6391,12 @@ typescript@^4.5.0-dev:
   linkType: hard
 
 "typescript@patch:typescript@^4.5.0-dev#~builtin<compat/typescript>":
-  version: 4.5.0-dev.20210821
-  resolution: "typescript@patch:typescript@npm%3A4.5.0-dev.20210821#~builtin<compat/typescript>::version=4.5.0-dev.20210821&hash=d8b4e7"
+  version: 4.5.0-dev.20210903
+  resolution: "typescript@patch:typescript@npm%3A4.5.0-dev.20210903#~builtin<compat/typescript>::version=4.5.0-dev.20210903&hash=d8b4e7"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 24e0e973eb4468b68e00024d9722d563d6b81dcd97581d6f2129267a01d9dfff487fdcc1b6173e9325108c172f3f1476934b2cb23013c312eca050c15198ff5b
+  checksum: bff66de5b1040fd09b292712aff360e5b611f14a3412a1ba5ac26a2c38a6dbe7ef323e624a933aba07c46ae53dc0015e6e076fb7233a66047d2f6a95a6032d3a
   languageName: node
   linkType: hard
 
