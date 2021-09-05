@@ -476,6 +476,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@editor/core@workspace:packages/core"
   dependencies:
+    "@emotion/css": ^11.1.3
     "@emotion/react": ^11.4.1
     "@emotion/styled": ^11.3.0
     "@fontsource/roboto": ^4.5.0
@@ -485,16 +486,18 @@ __metadata:
     "@types/react": ^17.0.19
     "@types/react-dom": ^17.0.9
     "@vitejs/plugin-react-refresh": ^1.3.6
+    clsx: ^1.1.1
     react: ^17.0.2
     react-dom: ^17.0.2
     slate: ^0.65.3
+    slate-history: ^0.65.3
     slate-react: ^0.65.3
     typescript: ^4.4.2
     vite: ^2.5.3
   languageName: unknown
   linkType: soft
 
-"@emotion/babel-plugin@npm:^11.3.0":
+"@emotion/babel-plugin@npm:^11.0.0, @emotion/babel-plugin@npm:^11.3.0":
   version: 11.3.0
   resolution: "@emotion/babel-plugin@npm:11.3.0"
   dependencies:
@@ -516,7 +519,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@emotion/cache@npm:^11.4.0":
+"@emotion/cache@npm:^11.1.3, @emotion/cache@npm:^11.4.0":
   version: 11.4.0
   resolution: "@emotion/cache@npm:11.4.0"
   dependencies:
@@ -526,6 +529,24 @@ __metadata:
     "@emotion/weak-memoize": ^0.2.5
     stylis: ^4.0.3
   checksum: bdef4c0ccc9bb87e99e4d48ff4855afe684035e9233a54bb339eb6aeafef35bd34fbed8ddb0d5ee440abd42c598043a87ebb0a324f2a1d732edf9c6b1709f9ed
+  languageName: node
+  linkType: hard
+
+"@emotion/css@npm:^11.1.3":
+  version: 11.1.3
+  resolution: "@emotion/css@npm:11.1.3"
+  dependencies:
+    "@emotion/babel-plugin": ^11.0.0
+    "@emotion/cache": ^11.1.3
+    "@emotion/serialize": ^1.0.0
+    "@emotion/sheet": ^1.0.0
+    "@emotion/utils": ^1.0.0
+  peerDependencies:
+    "@babel/core": ^7.0.0
+  peerDependenciesMeta:
+    "@babel/core":
+      optional: true
+  checksum: dc50283f65bd65d282636b7ccdcfdc4d71b1cd8d604dc54207971eb13bc0204f2d787a2131fb4660348889779369c1c59454d40c986b44c6d4fc770b0e46aaac
   languageName: node
   linkType: hard
 
@@ -575,7 +596,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@emotion/serialize@npm:^1.0.2":
+"@emotion/serialize@npm:^1.0.0, @emotion/serialize@npm:^1.0.2":
   version: 1.0.2
   resolution: "@emotion/serialize@npm:1.0.2"
   dependencies:
@@ -5796,6 +5817,17 @@ resolve@^2.0.0-next.3:
   version: 3.0.0
   resolution: "slash@npm:3.0.0"
   checksum: 94a93fff615f25a999ad4b83c9d5e257a7280c90a32a7cb8b4a87996e4babf322e469c42b7f649fd5796edd8687652f3fb452a86dc97a816f01113183393f11c
+  languageName: node
+  linkType: hard
+
+"slate-history@npm:^0.65.3":
+  version: 0.65.3
+  resolution: "slate-history@npm:0.65.3"
+  dependencies:
+    is-plain-object: ^3.0.0
+  peerDependencies:
+    slate: ">=0.55.0"
+  checksum: 7cd78e713f604c8d398d90f280cb766a4ecdacd97616ccf81063e26e22e58da769edc37798e9936cc64edc6fa6981276cbd542a92efaac8db3b26e96b884e4c6
   languageName: node
   linkType: hard
 

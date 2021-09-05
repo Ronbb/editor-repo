@@ -1,24 +1,32 @@
 import React, { FC, useEffect, useState } from 'react'
-import { createEditor, BaseEditor, Descendant } from 'slate'
-import { Slate, Editable, withReact, ReactEditor } from 'slate-react'
+import { createEditor, Descendant } from 'slate'
+import { withHistory } from 'slate-history'
+import { Slate, Editable, withReact } from 'slate-react'
+
 import { useImmutableCallback } from '@/utils/hooks/useImmutableCallback'
 import { noop } from '@/utils/noop'
 
-type CustomElement = { type: 'paragraph'; children: CustomText[] }
-type CustomText = { text: string; bold?: true }
+import { HeaderToolbar } from './components/HeaderToolbar'
+import { FooterToolbar } from './components/FooterToolbar'
+import { ModelEditorProvider } from './hooks/Context'
+import { decorateWith } from './renders/decorateWith'
 
-declare module 'slate' {
-  interface CustomTypes {
-    Editor: BaseEditor & ReactEditor
-    Element: CustomElement
-    Text: CustomText
-  }
-}
+import RenderElement from './renders/RenderElement'
+import RenderLeaf from './renders/RenderLeaf'
+import RenderPlaceholder from './renders/RenderPlaceholder'
+import FloatingToolbar from './components/FloatingToolbar/FloatingToolbar'
+import { Paper, Stack } from '@mui/material'
 
 export interface ModelEditorProps {
   id?: string
   classes?: {
+    [key: string]: string | undefined
+    root?: string
     content?: string
+    editable?: string
+    headerToolbar?: string
+    floatingToolbar?: string
+    footerToolbar?: string
   }
   value?: Descendant[]
   onChange?: (value: Descendant[]) => void
@@ -34,11 +42,13 @@ const initValue: Descendant[] = [
 export const ModelEditor: FC<ModelEditorProps> = ({
   id,
   classes,
-  value,
+  value = initValue,
   onChange = noop,
 }) => {
-  const [editor] = useState(() => withReact(createEditor()))
-  const [innerValue, setInnerValue] = useState<Descendant[]>(initValue)
+  const [editor] = useState(() => withHistory(withReact(createEditor())))
+  const [innerValue, setInnerValue] = useState<Descendant[]>(value)
+  const [search, setSearch] = useState<string>()
+
   const immutableOnChange = useImmutableCallback(onChange)
 
   useEffect(() => {
@@ -47,13 +57,29 @@ export const ModelEditor: FC<ModelEditorProps> = ({
 
   useEffect(() => {
     if (value) {
-      setInnerValue((inner) => (inner === value ? inner : value))
+      setInnerValue(value)
     }
   }, [value])
 
   return (
     <Slate editor={editor} value={innerValue} onChange={setInnerValue}>
-      <Editable id={id} className={classes?.content} />
+      <ModelEditorProvider onSearch={setSearch}>
+        <Stack spacing={2} className={classes?.root}>
+          <HeaderToolbar className={classes?.headerToolbar} />
+          <Paper className={classes?.content}>
+            <FloatingToolbar className={classes?.floatingToolbar} />
+            <Editable
+              id={id}
+              className={classes?.editable}
+              decorate={decorateWith(search)}
+              renderElement={RenderElement}
+              renderLeaf={RenderLeaf}
+              renderPlaceholder={RenderPlaceholder}
+            />
+          </Paper>
+          <FooterToolbar className={classes?.footerToolbar} />
+        </Stack>
+      </ModelEditorProvider>
     </Slate>
   )
 }
