@@ -2527,6 +2527,7 @@ __metadata:
     eslint-plugin-react-hooks: 4.2.0
     jest: ^27.1.0
     prettier: ^2.3.2
+    snyk: ^1.697.0
     typescript: ^4.5.0-dev
   languageName: unknown
   linkType: soft
@@ -5880,6 +5881,15 @@ resolve@^2.0.0-next.3:
   version: 4.2.0
   resolution: "smart-buffer@npm:4.2.0"
   checksum: b5167a7142c1da704c0e3af85c402002b597081dd9575031a90b4f229ca5678e9a36e8a374f1814c8156a725d17008ae3bde63b92f9cfd132526379e580bec8b
+  languageName: node
+  linkType: hard
+
+"snyk@npm:^1.697.0":
+  version: 1.697.0
+  resolution: "snyk@npm:1.697.0"
+  bin:
+    snyk: bin/snyk
+  checksum: 35ebd654bffc7e64ae9ecd6a4d2c7f7efb3c535e8a46e0ca32356427569716db1037fd64c3fca8aab3618df3def7ecd4d53589fc59d2149029fb5412ea6273ee
   languageName: node
   linkType: hard
 
