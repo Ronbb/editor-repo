@@ -69,7 +69,18 @@ const useStyles = makeStyles(
 const initValue: Descendant[] = [
   {
     type: 'paragraph',
-    children: [{ text: '' }],
+    children: [
+      {
+        text: '233',
+        color: 'grey',
+        // fill: '#adeeffb3',
+        bold: true,
+        strikethrough: true,
+        underline: true,
+        italic: true,
+        size: { number: 24, unit: 'px' },
+      },
+    ],
   },
 ]
 

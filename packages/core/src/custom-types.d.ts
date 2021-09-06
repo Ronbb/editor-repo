@@ -14,7 +14,7 @@ export type Align = 'left' | 'center' | 'right' | 'justify'
 export type CustomText = {
   text: string
   // used by search
-  highlight?: boolean
+  highlight?: Color
   bold?: boolean
   italic?: boolean
   underline?: boolean
@@ -34,7 +34,7 @@ export type Paragraph = {
 export type CustomElement = Paragraph
 
 export type CustomRange = BaseRange & {
-  highlight?: boolean
+  highlight?: Color
 }
 
 declare module 'slate' {

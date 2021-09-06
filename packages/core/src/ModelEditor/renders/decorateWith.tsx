@@ -15,7 +15,7 @@ export const decorateWith: (search?: string) => (entry: NodeEntry) => Range[] =
           ranges.push({
             anchor: { path, offset: offset - search.length },
             focus: { path, offset },
-            highlight: true,
+            highlight: '#ffeeba',
           })
         }
 
