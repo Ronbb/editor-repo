@@ -2,6 +2,7 @@ import React, { FC, useMemo } from 'react'
 import { Box, Stack } from '@mui/material'
 
 import * as Items from './Items'
+import { FloatingToolbarProvider } from './Context'
 
 export interface FloatingToolbarProps {
   className?: string
@@ -17,11 +18,13 @@ const FloatingToolbar: FC<FloatingToolbarProps> = ({
 }) => {
   return useMemo(
     () => (
-      <Box className={className}>
-        <Stack direction="column" spacing={2}>
-          {children}
-        </Stack>
-      </Box>
+      <FloatingToolbarProvider>
+        <Box className={className}>
+          <Stack direction="column" spacing={2}>
+            {children}
+          </Stack>
+        </Box>
+      </FloatingToolbarProvider>
     ),
     [children, className]
   )

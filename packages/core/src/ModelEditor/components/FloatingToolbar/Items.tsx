@@ -1,6 +1,6 @@
 import React, { FC, useMemo } from 'react'
 import { TextField } from '@mui/material'
-
+import { SearchOutlined } from '@mui/icons-material'
 import { useSearch } from '@/ModelEditor/hooks/Context'
 import { Item } from './Item'
 
@@ -9,7 +9,7 @@ export const Search: FC = () => {
 
   return useMemo(() => {
     return (
-      <Item>
+      <Item id="search" icon={SearchOutlined}>
         <TextField
           size="small"
           label="Search"

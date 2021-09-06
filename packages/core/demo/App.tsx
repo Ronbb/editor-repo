@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Box, buttonClasses, Theme } from '@mui/material'
 import { createStyles, makeStyles } from '@mui/styles'
 import { Descendant, ModelEditor } from '@/index'
 
 import './App.css'
 import '@/index.css'
+import useLocalStorageState from './useLocalStorageState'
 
 const useStyles = makeStyles(
   (theme: Theme) =>
@@ -42,6 +43,7 @@ const useStyles = makeStyles(
       },
       editable: {
         height: '100%',
+        overflowY: 'auto',
       },
       headerToolbar: {
         boxShadow: theme.shadows['2'],
@@ -86,7 +88,10 @@ const initValue: Descendant[] = [
 
 function App() {
   const classes = useStyles()
-  const [value, setValue] = useState<Descendant[]>(initValue)
+  const [value, setValue] = useLocalStorageState<Descendant[]>(
+    'editor-value',
+    initValue
+  )
 
   return (
     <Box className={classes.app}>
