@@ -1,4 +1,4 @@
-import React, { FC } from 'react'
+import React, { FC, useCallback, useState } from 'react'
 import {
   FormatAlignCenter,
   FormatAlignJustify,
@@ -27,6 +27,10 @@ import {
 } from '@mui/icons-material'
 
 import { Item } from './Item'
+import { useTextMark } from '@/ModelEditor/hooks/useTextMark'
+import { useTextMarks } from '@/ModelEditor/hooks/useTextMarks'
+import ColorPickerDialog from '../ColorPicker/ColorPickerDialog'
+import { Color } from '@/custom-types'
 
 export const AlignCenter: FC = () => {
   return <Item disabled tooltip={'AlignCenter'} icon={FormatAlignCenter} />
@@ -45,19 +49,69 @@ export const AlignRight: FC = () => {
 }
 
 export const Bold: FC = () => {
-  return <Item disabled tooltip={'Bold'} icon={FormatBold} />
+  const [active, addMark, removeMark] = useTextMark('bold')
+  const handleClick = () => {
+    if (active) {
+      removeMark()
+    } else {
+      addMark(true)
+    }
+  }
+
+  return (
+    <Item
+      active={active}
+      tooltip={'Bold'}
+      icon={FormatBold}
+      onClick={handleClick}
+    />
+  )
 }
 
 export const Clear: FC = () => {
-  return <Item disabled tooltip={'Clear'} icon={FormatClear} />
+  const [, , removeMark] = useTextMarks()
+  return <Item tooltip={'Clear'} icon={FormatClear} onClick={removeMark} />
 }
 
 export const ColorFill: FC = () => {
-  return <Item disabled tooltip={'ColorFill'} icon={FormatColorFill} />
+  const [open, setOpen] = useState(false)
+  const [color, addMark] = useTextMark('color')
+
+  const handleChange = useCallback(
+    (color: Color) => {
+      if (open) {
+        addMark(color)
+      }
+    },
+    [addMark, open]
+  )
+
+  const openDialog = useCallback(() => setOpen(true), [])
+  const closeDialog = useCallback(() => setOpen(false), [])
+
+  return (
+    <>
+      <Item tooltip={'ColorFill'} icon={FormatColorFill} onClick={openDialog} />
+      <ColorPickerDialog
+        open={open}
+        color={color ?? '#000000'}
+        onChange={handleChange}
+        onClose={closeDialog}
+      />
+    </>
+  )
 }
 
 export const ColorReset: FC = () => {
-  return <Item disabled tooltip={'ColorReset'} icon={FormatColorReset} />
+  const [color, , removeMark] = useTextMark('color')
+  return (
+    <Item
+      disabled={!color}
+      tooltip={'ColorReset'}
+      icon={FormatColorReset}
+      onClick={removeMark}
+    />
+  )
 }
 
 export const ColorText: FC = () => {

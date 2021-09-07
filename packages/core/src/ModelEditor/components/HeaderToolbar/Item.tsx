@@ -15,9 +15,17 @@ export const Item: FC<ItemProps> = ({
   tooltip = '',
   active,
   disabled,
+  onClick,
 }) => {
   return (
-    <IconButton disabled={disabled} color={active ? 'primary' : 'default'}>
+    <IconButton
+      disabled={disabled}
+      color={active ? 'primary' : 'default'}
+      onMouseDown={(event) => {
+        event.preventDefault()
+        onClick?.()
+      }}
+    >
       <Tooltip title={tooltip}>
         <IconComponent fontSize="inherit" />
       </Tooltip>

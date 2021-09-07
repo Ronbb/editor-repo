@@ -15,10 +15,10 @@ export type CustomText = {
   text: string
   // used by search
   highlight?: Color
-  bold?: boolean
-  italic?: boolean
-  underline?: boolean
-  strikethrough?: boolean
+  bold?: true
+  italic?: true
+  underline?: true
+  strikethrough?: true
   color?: Color
   fill?: Color
   size?: NumberWithUnit<'px' | 'em' | 'rem'>

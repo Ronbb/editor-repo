@@ -1,2 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-export const noop = () => {}
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-empty-function */
+export const noop = (...arg: any[]) => {}

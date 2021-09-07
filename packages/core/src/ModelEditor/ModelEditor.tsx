@@ -16,6 +16,7 @@ import RenderLeaf from './renders/RenderLeaf'
 import RenderPlaceholder from './renders/RenderPlaceholder'
 import FloatingToolbar from './components/FloatingToolbar/FloatingToolbar'
 import { Paper, Stack } from '@mui/material'
+import { IFrame } from '@/utils/IFrame'
 
 export interface ModelEditorProps {
   id?: string
@@ -68,14 +69,16 @@ export const ModelEditor: FC<ModelEditorProps> = ({
           <HeaderToolbar className={classes?.headerToolbar} />
           <Paper className={classes?.content}>
             <FloatingToolbar className={classes?.floatingToolbar} />
-            <Editable
-              id={id}
-              className={classes?.editable}
-              decorate={decorateWith(search)}
-              renderElement={RenderElement}
-              renderLeaf={RenderLeaf}
-              renderPlaceholder={RenderPlaceholder}
-            />
+            <IFrame>
+              <Editable
+                id={id}
+                className={classes?.editable}
+                decorate={decorateWith(search)}
+                renderElement={RenderElement}
+                renderLeaf={RenderLeaf}
+                renderPlaceholder={RenderPlaceholder}
+              />
+            </IFrame>
           </Paper>
           <FooterToolbar className={classes?.footerToolbar} />
         </Stack>

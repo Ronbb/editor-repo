@@ -1,18 +1,15 @@
 import React from 'react'
-import { RenderElementProps, useSlateStatic } from 'slate-react'
+import { RenderElementProps } from 'slate-react'
 
 const RenderElement: (props: RenderElementProps) => JSX.Element = ({
   children,
   attributes,
   element,
 }) => {
-  const editor = useSlateStatic()
-  const Tag = editor.isInline(element) ? 'span' : 'div'
-  return (
-    <Tag {...attributes} style={{ position: 'relative' }}>
-      {children}
-    </Tag>
-  )
+  switch (element.type) {
+    default:
+      return <p {...attributes}>{children}</p>
+  }
 }
 
 export default RenderElement

@@ -2,10 +2,10 @@ import React from 'react'
 import { Box, buttonClasses, Theme } from '@mui/material'
 import { createStyles, makeStyles } from '@mui/styles'
 import { Descendant, ModelEditor } from '@/index'
+import useLocalStorageState from './useLocalStorageState'
 
 import './App.css'
 import '@/index.css'
-import useLocalStorageState from './useLocalStorageState'
 
 const useStyles = makeStyles(
   (theme: Theme) =>
@@ -38,7 +38,6 @@ const useStyles = makeStyles(
         borderRadius: theme.shape.borderRadius,
         boxSizing: 'border-box',
         position: 'relative',
-        overflowY: 'auto',
         flexGrow: 1,
       },
       editable: {
@@ -51,7 +50,7 @@ const useStyles = makeStyles(
       floatingToolbar: {
         position: 'absolute',
         top: 0,
-        right: 0,
+        right: theme.spacing(2),
         margin: theme.spacing(1),
         zIndex: theme.zIndex.appBar,
       },
