@@ -491,7 +491,7 @@ __metadata:
     react-dom: ^17.0.2
     slate: ^0.65.3
     slate-history: ^0.65.3
-    slate-react: ^0.65.3
+    slate-react: 0.65.3
     typescript: ^4.4.2
     vite: ^2.5.3
   languageName: unknown
@@ -5832,7 +5832,7 @@ resolve@^2.0.0-next.3:
   languageName: node
   linkType: hard
 
-"slate-react@npm:^0.65.3":
+"slate-react@npm:0.65.3":
   version: 0.65.3
   resolution: "slate-react@npm:0.65.3"
   dependencies:
@@ -5849,6 +5849,26 @@ resolve@^2.0.0-next.3:
     react-dom: ">=16.8.0"
     slate: ">=0.55.0"
   checksum: d4f3695946dc503500716a052cef5330c55b4e9d8d8ace7e4564f60c3bebc550cd13d21eb4c7f2b61767cfbbceb5bcdc3d6b3d7609f6930d06e8c3750f5e4e06
+  languageName: node
+  linkType: hard
+
+"slate-react@patch:slate-react@npm:0.65.3#.yarn/patches/slate-react-npm-0.65.3-7ab6926d05::locator=editor-repo%40workspace%3A.":
+  version: 0.65.3
+  resolution: "slate-react@patch:slate-react@npm%3A0.65.3#.yarn/patches/slate-react-npm-0.65.3-7ab6926d05::version=0.65.3&hash=c201ac&locator=editor-repo%40workspace%3A."
+  dependencies:
+    "@types/is-hotkey": ^0.1.1
+    "@types/lodash": ^4.14.149
+    direction: ^1.0.3
+    is-hotkey: ^0.1.6
+    is-plain-object: ^3.0.0
+    lodash: ^4.17.4
+    scroll-into-view-if-needed: ^2.2.20
+    tiny-invariant: 1.0.6
+  peerDependencies:
+    react: ">=16.8.0"
+    react-dom: ">=16.8.0"
+    slate: ">=0.55.0"
+  checksum: a5d7013b54f3634cd6cd6b80380855f5ea8e2d42f7b568b1284894f4a17008b45ce713b90363ea038ca961056eb235c9744151240be7d0a89f342caa65b04edf
   languageName: node
   linkType: hard
 
@@ -6413,12 +6433,12 @@ typescript@^4.4.2:
   linkType: hard
 
 typescript@^4.5.0-dev:
-  version: 4.5.0-dev.20210903
-  resolution: "typescript@npm:4.5.0-dev.20210903"
+  version: 4.5.0-dev.20210907
+  resolution: "typescript@npm:4.5.0-dev.20210907"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: c67e9e8c11ca7f7b6fba552386f48571eda4df2012f2968af5786bc25bb4260b60384cc763e459e256d59753f5a214f4b8e499361d89ccc14a5470682d0fd314
+  checksum: c0c9c7632d0cb21f4d87f1b055008decbbae1706b4270db36109727a34938a7562a4fc3834a0b30b730b368e7826e4c895bdeb29835dfc486b44b7e0b7b28c35
   languageName: node
   linkType: hard
 
@@ -6433,12 +6453,12 @@ typescript@^4.5.0-dev:
   linkType: hard
 
 "typescript@patch:typescript@^4.5.0-dev#~builtin<compat/typescript>":
-  version: 4.5.0-dev.20210903
-  resolution: "typescript@patch:typescript@npm%3A4.5.0-dev.20210903#~builtin<compat/typescript>::version=4.5.0-dev.20210903&hash=d8b4e7"
+  version: 4.5.0-dev.20210907
+  resolution: "typescript@patch:typescript@npm%3A4.5.0-dev.20210907#~builtin<compat/typescript>::version=4.5.0-dev.20210907&hash=d8b4e7"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: bff66de5b1040fd09b292712aff360e5b611f14a3412a1ba5ac26a2c38a6dbe7ef323e624a933aba07c46ae53dc0015e6e076fb7233a66047d2f6a95a6032d3a
+  checksum: af80809e247be853a44050cdd086d1fd3436cbe470d4a9971795cf5b78104caea0152a26c96e312644905c820863e2a8a246404ce876d3f4d073731d38e1da53
   languageName: node
   linkType: hard
 

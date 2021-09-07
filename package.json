@@ -24,6 +24,7 @@
     "typescript": "^4.5.0-dev"
   },
   "resolutions": {
-    "eslint-plugin-react-hooks@4.2.0": "patch:eslint-plugin-react-hooks@npm:4.2.0#.yarn/patches/eslint-plugin-react-hooks-npm-4.2.0-e09b1ea4ce"
+    "eslint-plugin-react-hooks@4.2.0": "patch:eslint-plugin-react-hooks@npm:4.2.0#.yarn/patches/eslint-plugin-react-hooks-npm-4.2.0-e09b1ea4ce",
+    "slate-react@0.65.3": "patch:slate-react@npm:0.65.3#.yarn/patches/slate-react-npm-0.65.3-7ab6926d05"
   }
 }
