@@ -31,7 +31,13 @@ export type Paragraph = {
   indent?: NumberWithUnit<'px' | 'em' | 'rem'>
 }
 
-export type CustomElement = Paragraph
+export type BlockQuote = {
+  type: 'block-quote'
+  children: CustomText[]
+  background?: Color
+}
+
+export type CustomElement = Paragraph | BlockQuote
 
 export type CustomRange = BaseRange & {
   highlight?: Color
@@ -45,3 +51,10 @@ declare module 'slate' {
     Range: CustomRange
   }
 }
+
+export type ElementType = CustomElement['type']
+
+export type ExplicitElement<T extends ElementType> = Extract<
+  Element,
+  { type: T }
+>

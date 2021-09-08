@@ -75,7 +75,7 @@ export const Clear: FC = () => {
 
 export const ColorFill: FC = () => {
   const [open, setOpen] = useState(false)
-  const [color, addMark] = useTextMark('color')
+  const [color, addMark] = useTextMark('fill')
 
   const handleChange = useCallback(
     (color: Color) => {
@@ -115,7 +115,31 @@ export const ColorReset: FC = () => {
 }
 
 export const ColorText: FC = () => {
-  return <Item disabled tooltip={'ColorText'} icon={FormatColorText} />
+  const [open, setOpen] = useState(false)
+  const [color, addMark] = useTextMark('color')
+
+  const handleChange = useCallback(
+    (color: Color) => {
+      if (open) {
+        addMark(color)
+      }
+    },
+    [addMark, open]
+  )
+
+  const openDialog = useCallback(() => setOpen(true), [])
+  const closeDialog = useCallback(() => setOpen(false), [])
+  return (
+    <>
+      <Item tooltip={'ColorText'} icon={FormatColorText} onClick={openDialog} />
+      <ColorPickerDialog
+        open={open}
+        color={color ?? '#000000'}
+        onChange={handleChange}
+        onClose={closeDialog}
+      />
+    </>
+  )
 }
 
 export const IndentDecrease: FC = () => {
@@ -131,7 +155,15 @@ export const IndentIncrease: FC = () => {
 }
 
 export const Italic: FC = () => {
-  return <Item disabled tooltip={'Italic'} icon={FormatItalic} />
+  const [active, addMark, removeMark] = useTextMark('italic')
+  const handleClick = () => {
+    if (active) {
+      removeMark()
+    } else {
+      addMark(true)
+    }
+  }
+  return <Item tooltip={'Italic'} icon={FormatItalic} onClick={handleClick} />
 }
 
 export const LineSpacing: FC = () => {
@@ -169,7 +201,21 @@ export const Size: FC = () => {
 }
 
 export const Strikethrough: FC = () => {
-  return <Item disabled tooltip={'Strikethrough'} icon={FormatStrikethrough} />
+  const [active, addMark, removeMark] = useTextMark('strikethrough')
+  const handleClick = () => {
+    if (active) {
+      removeMark()
+    } else {
+      addMark(true)
+    }
+  }
+  return (
+    <Item
+      tooltip={'Strikethrough'}
+      icon={FormatStrikethrough}
+      onClick={handleClick}
+    />
+  )
 }
 
 export const TextdirectionLToR: FC = () => {

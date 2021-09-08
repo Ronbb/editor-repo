@@ -17,6 +17,8 @@ import RenderPlaceholder from './renders/RenderPlaceholder'
 import FloatingToolbar from './components/FloatingToolbar/FloatingToolbar'
 import { Paper, Stack } from '@mui/material'
 import { IFrame } from '@/utils/IFrame'
+import clsx from 'clsx'
+import { css } from '@emotion/css'
 
 export interface ModelEditorProps {
   id?: string
@@ -72,7 +74,14 @@ export const ModelEditor: FC<ModelEditorProps> = ({
             <IFrame>
               <Editable
                 id={id}
-                className={classes?.editable}
+                className={clsx(
+                  css`
+                    p {
+                      margin: 0;
+                    }
+                  `,
+                  classes?.editable
+                )}
                 decorate={decorateWith(search)}
                 renderElement={RenderElement}
                 renderLeaf={RenderLeaf}
