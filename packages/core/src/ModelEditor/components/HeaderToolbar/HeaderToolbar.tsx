@@ -4,6 +4,7 @@ import { Paper } from '@mui/material'
 import * as Items from './Items'
 import clsx from 'clsx'
 import { css } from '@emotion/css'
+import { HeaderToolbarProvider } from './Context'
 
 export interface HeaderToolbarProps {
   className?: string
@@ -18,15 +19,17 @@ export const HeaderToolbar: FC<HeaderToolbarProps> = ({
   children = defaultItems,
 }) => {
   return (
-    <Paper
-      className={clsx(
-        className,
-        css`
-          user-select: none;
-        `
-      )}
-    >
-      {children}
-    </Paper>
+    <HeaderToolbarProvider>
+      <Paper
+        className={clsx(
+          className,
+          css`
+            user-select: none;
+          `
+        )}
+      >
+        {children}
+      </Paper>
+    </HeaderToolbarProvider>
   )
 }

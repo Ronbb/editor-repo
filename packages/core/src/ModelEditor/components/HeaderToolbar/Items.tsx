@@ -26,11 +26,13 @@ import {
   FormatUnderlined,
 } from '@mui/icons-material'
 
-import { Item } from './Item'
+import { Item, PopItem } from './Item'
 import { useTextMark } from '@/ModelEditor/hooks/useTextMark'
 import { useTextMarks } from '@/ModelEditor/hooks/useTextMarks'
 import ColorPickerDialog from '../ColorPicker/ColorPickerDialog'
 import { Color } from '@/custom-types'
+import { TextField } from '@mui/material'
+import { formatStyle } from '@/utils/formatStyle'
 
 export const AlignCenter: FC = () => {
   return <Item disabled tooltip={'AlignCenter'} icon={FormatAlignCenter} />
@@ -197,7 +199,27 @@ export const Shapes: FC = () => {
 }
 
 export const Size: FC = () => {
-  return <Item disabled tooltip={'Size'} icon={FormatSize} />
+  const [size, addMark] = useTextMark('size')
+  const handleChange: React.ChangeEventHandler<
+    HTMLTextAreaElement | HTMLInputElement
+  > = (event) => {
+    addMark({
+      number: parseFloat(event.target.value),
+      unit: 'px',
+    })
+  }
+  return (
+    <PopItem id="size" tooltip={formatStyle(size)} icon={FormatSize}>
+      <TextField
+        size="small"
+        label="Size"
+        variant="standard"
+        value={size?.number}
+        InputLabelProps={{ shrink: true }}
+        onChange={handleChange}
+      />
+    </PopItem>
+  )
 }
 
 export const Strikethrough: FC = () => {

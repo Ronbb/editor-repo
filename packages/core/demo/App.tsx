@@ -6,6 +6,38 @@ import useLocalStorageState from './useLocalStorageState'
 
 import './App.css'
 import '@/index.css'
+import { injectGlobal } from '@emotion/css'
+
+const isWindows = /Windows/.test(window.navigator.userAgent)
+
+if (isWindows) {
+  injectGlobal`
+  ::-webkit-scrollbar {
+    background-color: transparent;
+    width: 18px;
+    height: 18px;
+  }
+
+  ::-webkit-scrollbar-button {
+    background-color: transparent;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  ::-webkit-scrollbar-track-piece {
+    background-color: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #d6dee1;
+    border-radius: 20px;
+    border: 6px solid transparent;
+    background-clip: content-box;
+  }
+  `
+}
 
 const useStyles = makeStyles(
   (theme: Theme) =>
@@ -42,7 +74,7 @@ const useStyles = makeStyles(
       },
       editable: {
         height: '100%',
-        overflowY: 'auto',
+        overflowY: 'overlay' as any,
       },
       headerToolbar: {
         boxShadow: theme.shadows['2'],
