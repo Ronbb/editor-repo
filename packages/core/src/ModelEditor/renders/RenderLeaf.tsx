@@ -1,13 +1,9 @@
 import React, { useMemo } from 'react'
-import { RenderLeafProps } from 'slate-react'
-import { formatStyle } from '@/utils/formatStyle'
 import { keyframes } from '@emotion/css'
+import { formatStyle } from '@/utils/formatStyle'
+import { LeafContentRenderer, LeafRenderer } from './interface'
 
-const RenderLeaf: (props: RenderLeafProps) => JSX.Element = ({
-  children,
-  attributes,
-  leaf,
-}) => {
+export const RenderLeafContent: LeafContentRenderer = ({ children, leaf }) => {
   const bling = useMemo(
     () =>
       leaf.highlight &&
@@ -44,7 +40,6 @@ const RenderLeaf: (props: RenderLeafProps) => JSX.Element = ({
 
   return (
     <span
-      {...attributes}
       style={{
         color: leaf.color,
         fontSize: formatStyle(leaf.size),
@@ -55,6 +50,14 @@ const RenderLeaf: (props: RenderLeafProps) => JSX.Element = ({
       }}
     >
       {children}
+    </span>
+  )
+}
+
+const RenderLeaf: LeafRenderer = ({ attributes, ...rest }) => {
+  return (
+    <span {...attributes}>
+      <RenderLeafContent {...rest} />
     </span>
   )
 }

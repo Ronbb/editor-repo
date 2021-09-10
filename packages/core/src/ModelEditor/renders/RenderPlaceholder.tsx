@@ -1,10 +1,7 @@
 import React from 'react'
-import { RenderPlaceholderProps } from 'slate-react'
+import { PlaceholderRenderer } from './interface'
 
-const RenderPlaceholder: (props: RenderPlaceholderProps) => JSX.Element = ({
-  children,
-  attributes,
-}) => {
+const RenderPlaceholder: PlaceholderRenderer = ({ children, attributes }) => {
   return <span {...attributes}>{children}</span>
 }
 

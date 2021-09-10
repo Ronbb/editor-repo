@@ -43,7 +43,7 @@ const useStyles = makeStyles(
   (theme: Theme) =>
     createStyles({
       app: {
-        backgroundColor: theme.palette.primary.light,
+        backgroundColor: theme.palette.grey[400],
         width: '100%',
         height: '100%',
         padding: theme.spacing(4),

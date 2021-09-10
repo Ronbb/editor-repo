@@ -1,15 +1,14 @@
 import React from 'react'
-import { RenderElementProps } from 'slate-react'
+import { TypedElementRenders } from './ElementRenderers'
+import { ElementRenderer } from './interface'
 
-const RenderElement: (props: RenderElementProps) => JSX.Element = ({
-  children,
-  attributes,
-  element,
-}) => {
-  switch (element.type) {
-    default:
-      return <p {...attributes}>{children}</p>
-  }
+const RenderElement: ElementRenderer = ({ children, attributes, element }) => {
+  const Renderer = TypedElementRenders[element.type]
+  return (
+    <Renderer attributes={attributes} element={element}>
+      {children}
+    </Renderer>
+  )
 }
 
 export default RenderElement

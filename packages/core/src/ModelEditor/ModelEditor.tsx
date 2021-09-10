@@ -2,9 +2,13 @@ import React, { FC, useEffect, useState } from 'react'
 import { createEditor, Descendant } from 'slate'
 import { withHistory } from 'slate-history'
 import { Slate, Editable, withReact } from 'slate-react'
+import { Paper, Stack } from '@mui/material'
+import { css } from '@emotion/css'
+import clsx from 'clsx'
 
 import { useImmutableCallback } from '@/utils/hooks/useImmutableCallback'
 import { noop } from '@/utils/noop'
+import { IFrame } from '@/utils/IFrame'
 
 import { HeaderToolbar } from './components/HeaderToolbar'
 import { FooterToolbar } from './components/FooterToolbar'
@@ -15,10 +19,7 @@ import RenderElement from './renders/RenderElement'
 import RenderLeaf from './renders/RenderLeaf'
 import RenderPlaceholder from './renders/RenderPlaceholder'
 import FloatingToolbar from './components/FloatingToolbar/FloatingToolbar'
-import { Paper, Stack } from '@mui/material'
-import { IFrame } from '@/utils/IFrame'
-import clsx from 'clsx'
-import { css } from '@emotion/css'
+import { withElements } from '@/extensions/withElements'
 
 export interface ModelEditorProps {
   id?: string
@@ -48,7 +49,9 @@ export const ModelEditor: FC<ModelEditorProps> = ({
   value = initValue,
   onChange = noop,
 }) => {
-  const [editor] = useState(() => withHistory(withReact(createEditor())))
+  const [editor] = useState(() =>
+    withElements(withHistory(withReact(createEditor())))
+  )
   const [innerValue, setInnerValue] = useState<Descendant[]>(value)
   const [search, setSearch] = useState<string>()
 

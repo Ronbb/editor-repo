@@ -24,6 +24,7 @@ import {
   FormatTextdirectionLToR,
   FormatTextdirectionRToL,
   FormatUnderlined,
+  Store,
 } from '@mui/icons-material'
 
 import { Item, PopItem } from './Item'
@@ -33,6 +34,7 @@ import ColorPickerDialog from '../ColorPicker/ColorPickerDialog'
 import { Color } from '@/custom-types'
 import { TextField } from '@mui/material'
 import { formatStyle } from '@/utils/formatStyle'
+import { useSlateStatic } from 'slate-react'
 
 export const AlignCenter: FC = () => {
   return <Item disabled tooltip={'AlignCenter'} icon={FormatAlignCenter} />
@@ -142,6 +144,14 @@ export const ColorText: FC = () => {
       />
     </>
   )
+}
+
+export const DataRef: FC = () => {
+  const editor = useSlateStatic()
+  const handleClick = useCallback(() => {
+    editor.insertDataRef('default')
+  }, [editor])
+  return <Item tooltip={'DataRef'} icon={Store} onClick={handleClick} />
 }
 
 export const IndentDecrease: FC = () => {
@@ -261,5 +271,19 @@ export const TextdirectionRToL: FC = () => {
 }
 
 export const Underlined: FC = () => {
-  return <Item disabled tooltip={'Underlined'} icon={FormatUnderlined} />
+  const [active, addMark, removeMark] = useTextMark('underline')
+  const handleClick = () => {
+    if (active) {
+      removeMark()
+    } else {
+      addMark(true)
+    }
+  }
+  return (
+    <Item
+      tooltip={'Underlined'}
+      icon={FormatUnderlined}
+      onClick={handleClick}
+    />
+  )
 }

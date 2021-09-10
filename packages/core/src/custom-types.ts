@@ -1,6 +1,8 @@
 import { BaseEditor, BaseRange } from 'slate'
 import { HistoryEditor } from 'slate-history'
 import { ReactEditor } from 'slate-react'
+import { CustomElement } from './custom-elements'
+import { ElementsEditor } from './extensions/withElements'
 
 export type NumberWithUnit<U extends string = string> = {
   number: number
@@ -24,37 +26,17 @@ export type CustomText = {
   size?: NumberWithUnit<'px' | 'em' | 'rem'>
 }
 
-export type Paragraph = {
-  type: 'paragraph'
-  children: CustomText[]
-  align?: Align
-  indent?: NumberWithUnit<'px' | 'em' | 'rem'>
-}
-
-export type BlockQuote = {
-  type: 'block-quote'
-  children: CustomText[]
-  background?: Color
-}
-
-export type CustomElement = Paragraph | BlockQuote
-
 export type CustomRange = BaseRange & {
   highlight?: Color
 }
 
 declare module 'slate' {
   interface CustomTypes {
-    Editor: BaseEditor & ReactEditor & HistoryEditor
+    Editor: BaseEditor & ReactEditor & HistoryEditor & ElementsEditor
     Element: CustomElement
     Text: CustomText
     Range: CustomRange
   }
 }
 
-export type ElementType = CustomElement['type']
-
-export type ExplicitElement<T extends ElementType> = Extract<
-  Element,
-  { type: T }
->
+export * from './custom-elements'
