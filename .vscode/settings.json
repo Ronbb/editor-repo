@@ -1,8 +1,4 @@
 {
-  "cSpell.words": [
-    "roboto",
-    "vite",
-    "vitejs"
-  ],
+  "cSpell.words": ["clsx", "roboto", "snyk", "vite", "vitejs"],
   "typescript.tsdk": "node_modules/typescript/lib"
 }

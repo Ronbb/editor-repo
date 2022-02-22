@@ -1,7 +1,7 @@
-import React, { FC, useMemo } from 'react'
-import { Node } from 'slate'
-import { useSlate } from 'slate-react'
-import { Item } from './Item'
+import React, {  FC,  useMemo } from 'react'
+import {  Node } from 'slate'
+import {  useSlate } from 'slate-react'
+import {  Item } from './Item'
 
 export const Counter: FC = () => {
   const editor = useSlate()
@@ -50,6 +50,31 @@ export const Location: FC = () => {
         tooltip={`${location.row},${location.column}`}
       >{`Location: ${location.row},${location.column}`}</Item>
     ),
+    [location]
+  )
+}
+
+export const ModeSwitcher: FC = () => {
+  const editor = useSlate()
+  const { selection } = editor
+
+  const location = useMemo(() => {
+    const result = {
+      column: '0',
+      row: '0',
+    }
+    if (!selection) {
+      return result
+    }
+
+    result.row = selection.focus.path.join('-')
+    result.column = selection.focus.offset.toString()
+
+    return result
+  }, [selection])
+
+  return useMemo(
+    () => <Item>{`Location: ${location.row},${location.column}`}</Item>,
     [location]
   )
 }
